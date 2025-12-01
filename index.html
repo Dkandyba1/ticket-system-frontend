@@ -17,27 +17,39 @@
         const { useState, useEffect } = React;
 
         // ============================================================
-        // 💾 AUTO-SAVE TO LOCALSTORAGE (Your data is saved!)
+        // 🌐 CLOUD DATABASE CONNECTION
         // ============================================================
-        const useLocalStorage = (key, initialValue) => {
-            const [value, setValue] = useState(() => {
-                try {
-                    const item = window.localStorage.getItem(key);
-                    return item ? JSON.parse(item) : initialValue;
-                } catch (error) {
-                    return initialValue;
-                }
-            });
+        const API_URL = 'https://ticket-system-api-hpxq.onrender.com/api';
 
-            useEffect(() => {
-                try {
-                    window.localStorage.setItem(key, JSON.stringify(value));
-                } catch (error) {
-                    console.error('Error saving to localStorage:', error);
+        // API Helper Function
+        const apiCall = async (endpoint, method = 'GET', data = null) => {
+            const options = {
+                method,
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+            };
+            
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(API_URL + endpoint, options);
+                
+                if (response.status === 401) {
+                    return { error: 'Session expired', needsLogin: true };
                 }
-            }, [key, value]);
-
-            return [value, setValue];
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Request failed`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
         };
 
         // Icon component that works with Lucide
@@ -49,13 +61,13 @@
         }
 
         function TicketingSystem() {
-            const [isLoggedIn, setIsLoggedIn] = useLocalStorage('isLoggedIn', false);
-            const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [currentUser, setCurrentUser] = useState(null);
             const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-            const [tickets, setTickets] = useLocalStorage('tickets', []);
-            const [archivedTickets, setArchivedTickets] = useLocalStorage('archivedTickets', []);
-            const [recycleBin, setRecycleBin] = useLocalStorage('recycleBin', []);
-            const [invoices, setInvoices] = useLocalStorage('invoices', []);
+            const [tickets, setTickets] = useState([]);
+            const [archivedTickets, setArchivedTickets] = useState([]);
+            const [recycleBin, setRecycleBin] = useState([]);
+            const [invoices, setInvoices] = useState([]);
             const [showNewTicket, setShowNewTicket] = useState(false);
             const [showNewInvoice, setShowNewInvoice] = useState(false);
             const [newTicket, setNewTicket] = useState({ 
@@ -94,12 +106,12 @@
             const [selectedUserForAdmin, setSelectedUserForAdmin] = useState(null);
             const [resetPasswordInputs, setResetPasswordInputs] = useState({});
             
-            const [users, setUsers] = useLocalStorage('users', [
+            const [users, setUsers] = useState([
                 { id: 1, username: 'admin', password: 'admin123', role: 'admin', email: 'admin@example.com', active: true },
                 { id: 2, username: 'user', password: 'user123', role: 'user', email: 'user@example.com', active: true }
             ]);
             
-            const [staffMembers, setStaffMembers] = useLocalStorage('staffMembers', []);
+            const [staffMembers, setStaffMembers] = useState([]);
             
             const [showAddStaffModal, setShowAddStaffModal] = useState(false);
             const [newStaffMember, setNewStaffMember] = useState({ name: '', username: '', password: '' });
@@ -108,70 +120,12 @@
                 lucide.createIcons();
             });
 
-            // ============================================================
-            // 🔄 REAL-TIME UPDATES - Sync data across tabs/windows
-            // ============================================================
             useEffect(() => {
-                const handleStorageChange = (e) => {
-                    // When another tab/window updates localStorage, sync here
-                    if (e.key === 'tickets') {
-                        setTickets(JSON.parse(e.newValue || '[]'));
-                    } else if (e.key === 'invoices') {
-                        setInvoices(JSON.parse(e.newValue || '[]'));
-                    } else if (e.key === 'archivedTickets') {
-                        setArchivedTickets(JSON.parse(e.newValue || '[]'));
-                    } else if (e.key === 'recycleBin') {
-                        setRecycleBin(JSON.parse(e.newValue || '[]'));
-                    } else if (e.key === 'staffMembers') {
-                        setStaffMembers(JSON.parse(e.newValue || '[]'));
-                    } else if (e.key === 'users') {
-                        setUsers(JSON.parse(e.newValue || '[]'));
-                    }
-                };
-
-                // Listen for storage changes from other tabs/windows
-                window.addEventListener('storage', handleStorageChange);
-
-                // BACKUP: Poll localStorage every 2 seconds to catch same-tab updates
-                const pollInterval = setInterval(() => {
-                    try {
-                        const storedTickets = JSON.parse(localStorage.getItem('tickets') || '[]');
-                        const storedInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-                        const storedArchived = JSON.parse(localStorage.getItem('archivedTickets') || '[]');
-                        const storedBin = JSON.parse(localStorage.getItem('recycleBin') || '[]');
-                        const storedStaff = JSON.parse(localStorage.getItem('staffMembers') || '[]');
-                        const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-                        
-                        // Only update if different (prevent infinite loops)
-                        if (JSON.stringify(storedTickets) !== JSON.stringify(tickets)) {
-                            setTickets(storedTickets);
-                        }
-                        if (JSON.stringify(storedInvoices) !== JSON.stringify(invoices)) {
-                            setInvoices(storedInvoices);
-                        }
-                        if (JSON.stringify(storedArchived) !== JSON.stringify(archivedTickets)) {
-                            setArchivedTickets(storedArchived);
-                        }
-                        if (JSON.stringify(storedBin) !== JSON.stringify(recycleBin)) {
-                            setRecycleBin(storedBin);
-                        }
-                        if (JSON.stringify(storedStaff) !== JSON.stringify(staffMembers)) {
-                            setStaffMembers(storedStaff);
-                        }
-                        if (JSON.stringify(storedUsers) !== JSON.stringify(users)) {
-                            setUsers(storedUsers);
-                        }
-                    } catch (error) {
-                        console.error('Polling error:', error);
-                    }
-                }, 2000); // Check every 2 seconds
-
-                // Cleanup listener and interval on unmount
-                return () => {
-                    window.removeEventListener('storage', handleStorageChange);
-                    clearInterval(pollInterval);
-                };
-            }, [tickets, invoices, archivedTickets, recycleBin, staffMembers, users]);
+                if (isLoggedIn) {
+                    // Start with no tickets - ready for client
+                    setTickets([]);
+                }
+            }, [isLoggedIn]);
 
             // Create/update workload pie chart
             useEffect(() => {
@@ -247,72 +201,144 @@
                 }
             }, [settingsTab, currentView, tickets]);
 
-            const handleLogin = () => {
-                const user = users.find(u => u.username === loginForm.username && u.password === loginForm.password);
-                if (user) {
-                    setCurrentUser(user);
-                    setIsLoggedIn(true);
-                } else {
-                    alert('Invalid credentials');
+            // ============================================================
+            // 🔄 LOAD DATA FROM API
+            // ============================================================
+            const loadAllData = async () => {
+                try {
+                    const [ticketsData, invoicesData, staffData] = await Promise.all([
+                        apiCall('/tickets').catch(() => []),
+                        apiCall('/invoices').catch(() => []),
+                        apiCall('/staff').catch(() => [])
+                    ]);
+                    
+                    setTickets(Array.isArray(ticketsData) ? ticketsData.filter(t => !t.completed && !t.deletedAt) : []);
+                    setArchivedTickets(Array.isArray(ticketsData) ? ticketsData.filter(t => t.completed) : []);
+                    setRecycleBin(Array.isArray(ticketsData) ? ticketsData.filter(t => t.deletedAt) : []);
+                    setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+                    setStaffMembers(Array.isArray(staffData) ? staffData.map(s => s.name || s) : []);
+                } catch (error) {
+                    console.error('Failed to load data:', error);
                 }
             };
 
-            const handleLogout = () => {
-                setIsLoggedIn(false);
-                setCurrentUser(null);
-            };
+            // Auto-refresh data every 3 seconds for real-time sync
+            useEffect(() => {
+                if (isLoggedIn) {
+                    const interval = setInterval(loadAllData, 3000);
+                    return () => clearInterval(interval);
+                }
+            }, [isLoggedIn]);
 
-            const createTicket = () => {
-                if (!newTicket.client || !newTicket.description || !newTicket.assignedTo) {
-                    alert('Please fill in all fields');
+            const handleLogin = async () => {
+                if (!loginForm.username || !loginForm.password) {
+                    alert('Please enter username and password');
                     return;
                 }
                 
-                // Set dateSent to today if not provided
-                const dateSent = newTicket.dateSent || new Date().toISOString().split('T')[0];
-                
-                setTickets([{
-                    id: Date.now(),
-                    ...newTicket,
-                    dateSent: dateSent,
-                    createdBy: currentUser.username,
-                    createdAt: new Date().toISOString(),
-                    completed: false
-                }, ...tickets]);
-                setNewTicket({ 
-                    client: '', 
-                    description: '', 
-                    priority: 'amber', 
-                    urgency: 'medium',
-                    assignedTo: '',
-                    dateSent: '',
-                    deadline: ''
-                });
-                setShowNewTicket(false);
+                try {
+                    const data = await apiCall('/auth/login', 'POST', loginForm);
+                    
+                    if (data.needsLogin || data.error) {
+                        alert('Login failed: ' + (data.error || 'Invalid credentials'));
+                        return;
+                    }
+                    
+                    setCurrentUser(data);
+                    setIsLoggedIn(true);
+                    setLoginForm({ username: '', password: '' });
+                    
+                    // Load all data after login
+                    await loadAllData();
+                    
+                } catch (error) {
+                    alert('Login failed: ' + error.message);
+                }
             };
 
-            const createInvoice = () => {
+            const handleLogout = async () => {
+                try {
+                    await apiCall('/auth/logout', 'POST');
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+                setIsLoggedIn(false);
+                setCurrentUser(null);
+                setTickets([]);
+                setArchivedTickets([]);
+                setRecycleBin([]);
+                setInvoices([]);
+            };
+
+            const createTicket = async () => {
+                if (!newTicket.client || !newTicket.description) {
+                    alert('Please fill in client and description');
+                    return;
+                }
+                
+                try {
+                    const dateSent = newTicket.dateSent || new Date().toISOString().split('T')[0];
+                    
+                    await apiCall('/tickets', 'POST', {
+                        ...newTicket,
+                        dateSent: dateSent
+                    });
+                    
+                    // Reload data to get fresh tickets
+                    await loadAllData();
+                    
+                    setNewTicket({ 
+                        client: '', 
+                        description: '', 
+                        priority: 'amber', 
+                        urgency: 'medium',
+                        assignedTo: '',
+                        dateSent: '',
+                        deadline: ''
+                    });
+                    setShowNewTicket(false);
+                } catch (error) {
+                    alert('Failed to create ticket: ' + error.message);
+                }
+            };
+
+            const createInvoice = async () => {
                 if (!newInvoice.client || !newInvoice.hours || !newInvoice.cost) {
                     alert('Please fill in required fields');
                     return;
                 }
-                setInvoices([{
-                    id: Date.now(),
-                    ...newInvoice,
-                    totalCost: parseFloat(newInvoice.hours) * parseFloat(newInvoice.cost),
-                    createdAt: new Date().toISOString()
-                }, ...invoices]);
-                setNewInvoice({
-                    client: '', hours: '', cost: '', jobDescription: '', 
-                    jobDate: '', assignedTo: '', chargeTiming: 'now', quickbooks: false, paid: false
-                });
-                setShowNewInvoice(false);
+                
+                try {
+                    const totalCost = parseFloat(newInvoice.hours) * parseFloat(newInvoice.cost);
+                    
+                    await apiCall('/invoices', 'POST', {
+                        ...newInvoice,
+                        hours: parseFloat(newInvoice.hours),
+                        cost: parseFloat(newInvoice.cost),
+                        totalCost
+                    });
+                    
+                    await loadAllData();
+                    
+                    setNewInvoice({
+                        client: '', hours: '', cost: '', jobDescription: '', 
+                        jobDate: '', assignedTo: '', chargeTiming: 'now', quickbooks: false, paid: false
+                    });
+                    setShowNewInvoice(false);
+                } catch (error) {
+                    alert('Failed to create invoice: ' + error.message);
+                }
             };
 
-            const toggleInvoicePaid = (id) => {
-                setInvoices(invoices.map(inv => 
-                    inv.id === id ? { ...inv, paid: !inv.paid } : inv
-                ));
+            const toggleInvoicePaid = async (id) => {
+                try {
+                    const invoice = invoices.find(inv => inv.id === id);
+                    await apiCall(`/invoices/${id}`, 'PATCH', { paid: !invoice.paid });
+                    await loadAllData();
+                } catch (error) {
+                    alert('Failed to update invoice: ' + error.message);
+                }
+            };
             };
 
             const deleteInvoice = (id) => {
@@ -326,28 +352,36 @@
                 setEditForm({ ...ticket });
             };
 
-            const saveEdit = (id) => {
-                setTickets(tickets.map(t => t.id === id ? { ...t, ...editForm } : t));
-                setEditingTicket(null);
+            const saveEdit = async (id) => {
+                try {
+                    await apiCall(`/tickets/${id}`, 'PATCH', editForm);
+                    await loadAllData();
+                    setEditingTicket(null);
+                } catch (error) {
+                    alert('Failed to update ticket: ' + error.message);
+                }
             };
 
-            const deleteTicket = (id) => {
+            const deleteTicket = async (id) => {
                 if (window.confirm('Move this ticket to Recycle Bin?')) {
-                    const ticket = tickets.find(t => t.id === id);
-                    if (ticket) {
-                        setRecycleBin([...recycleBin, { ...ticket, deletedAt: new Date().toISOString(), deletedFrom: 'active' }]);
-                        setTickets(tickets.filter(t => t.id !== id));
+                    try {
+                        await apiCall(`/tickets/${id}`, 'DELETE');
+                        await loadAllData();
+                    } catch (error) {
+                        alert('Failed to delete ticket: ' + error.message);
                     }
                 }
             };
 
-            const markComplete = (id) => {
-                const ticket = tickets.find(t => t.id === id);
-                if (ticket && !ticket.completed) {
-                    // Mark as complete and auto-archive
-                    const completedTicket = { ...ticket, completed: true, completedAt: new Date().toISOString() };
-                    setArchivedTickets([...archivedTickets, { ...completedTicket, archivedAt: new Date().toISOString() }]);
-                    setTickets(tickets.filter(t => t.id !== id));
+            const markComplete = async (id) => {
+                try {
+                    await apiCall(`/tickets/${id}`, 'PATCH', {
+                        completed: true,
+                        completedAt: new Date().toISOString()
+                    });
+                    await loadAllData();
+                } catch (error) {
+                    alert('Failed to complete ticket: ' + error.message);
                 }
             };
 
@@ -708,17 +742,6 @@
                                 Dashboard
                             </button>
                             <button
-                                onClick={() => setCurrentView('mytickets')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                                    currentView === 'mytickets' 
-                                        ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                }`}
-                            >
-                                <Icon name="user" />
-                                My Tickets
-                            </button>
-                            <button
                                 onClick={() => setCurrentView('tickets')}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
                                     currentView === 'tickets' 
@@ -727,7 +750,7 @@
                                 }`}
                             >
                                 <Icon name="file-text" />
-                                All Tickets
+                                Tickets
                             </button>
                             <button
                                 onClick={() => setCurrentView('invoices')}
@@ -1083,138 +1106,6 @@
                                             </p>
                                         )}
                                     </div>
-                                </div>
-                            </>
-                        )}
-
-                        {/* MY TICKETS VIEW */}
-                        {currentView === 'mytickets' && (
-                            <>
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                        My Assigned Tickets
-                                    </h2>
-                                    <button
-                                        onClick={() => setShowNewTicket(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                                    >
-                                        <Icon name="plus" />
-                                        New Ticket
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {tickets.filter(t => t.assignedTo === currentUser?.username || t.assignedTo === staffMembers.find(s => s.includes(currentUser?.username))).map(ticket => {
-                                        const dateTime = formatDateTime(ticket.createdAt);
-                                        const isEditing = editingTicket === ticket.id;
-                                        
-                                        return (
-                                            <div key={ticket.id} className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow`}>
-                                                {isEditing ? (
-                                                    <div className="p-6 space-y-4">
-                                                        <input
-                                                            type="text"
-                                                            value={editForm.client || ''}
-                                                            onChange={(e) => setEditForm({...editForm, client: e.target.value})}
-                                                            placeholder="Client"
-                                                            className={`w-full px-4 py-2 rounded-lg ${
-                                                                darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-300'
-                                                            } border`}
-                                                        />
-                                                        <textarea
-                                                            value={editForm.description || ''}
-                                                            onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                                                            placeholder="Description"
-                                                            rows="3"
-                                                            className={`w-full px-4 py-2 rounded-lg ${
-                                                                darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-50 text-gray-900 border-gray-300'
-                                                            } border`}
-                                                        />
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => saveEdit(ticket.id)}
-                                                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                                                            >
-                                                                Save
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setEditingTicket(null)}
-                                                                className={`px-4 py-2 rounded-lg ${
-                                                                    darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                                                                }`}
-                                                            >
-                                                                Cancel
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-6">
-                                                        <div className="flex items-start justify-between mb-4">
-                                                            <div className="flex-1">
-                                                                <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                                    {ticket.client}
-                                                                </h3>
-                                                                <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                                                                    {ticket.description}
-                                                                </p>
-                                                                <div className="flex gap-2 mt-4 flex-wrap">
-                                                                    <span className={`px-3 py-1 text-xs rounded-full font-medium ${priorityColors[ticket.priority]}`}>
-                                                                        {ticket.priority}
-                                                                    </span>
-                                                                    <span className={`px-3 py-1 text-xs rounded-full font-medium ${urgencyColors[ticket.urgency]}`}>
-                                                                        {ticket.urgency}
-                                                                    </span>
-                                                                    {ticket.assignedTo && (
-                                                                        <span className="px-3 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-800">
-                                                                            👤 {ticket.assignedTo}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => { setEditingTicket(ticket.id); setEditForm(ticket); }}
-                                                                    className={`p-2 rounded-lg ${
-                                                                        darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-                                                                    }`}
-                                                                    title="Edit"
-                                                                >
-                                                                    <Icon name="edit" size={16} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => markComplete(ticket.id)}
-                                                                    className="p-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg"
-                                                                    title="Complete"
-                                                                >
-                                                                    <Icon name="check" size={16} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => deleteTicket(ticket.id)}
-                                                                    className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg"
-                                                                    title="Delete"
-                                                                >
-                                                                    <Icon name="trash-2" size={16} />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} flex gap-4 mt-2`}>
-                                                            <span>📅 {dateTime.date}</span>
-                                                            <span>🕐 {dateTime.time}</span>
-                                                            <span>👤 {ticket.createdBy}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                    
-                                    {tickets.filter(t => t.assignedTo === currentUser?.username || t.assignedTo === staffMembers.find(s => s.includes(currentUser?.username))).length === 0 && (
-                                        <div className={`${darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-600'} rounded-lg shadow p-12 text-center`}>
-                                            <Icon name="inbox" size={48} />
-                                            <p className="mt-4 text-lg">No tickets assigned to you</p>
-                                            <p className="text-sm mt-2">Check "All Tickets" tab to see all team tickets</p>
-                                        </div>
-                                    )}
                                 </div>
                             </>
                         )}
