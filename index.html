@@ -25,7 +25,7 @@
         const callAPI = async (endpoint, method = 'GET', data = null) => {
             const options = {
                 method,
-                credentials: 'include', // CRITICAL for sessions!
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' }
             };
             
@@ -34,20 +34,32 @@
             }
             
             try {
+                console.log('🔗 API Call:', method, endpoint, data);
                 const response = await fetch(API_URL + endpoint, options);
                 
                 if (response.status === 401) {
+                    console.error('❌ Session expired');
                     return { error: 'Session expired', needsLogin: true };
                 }
                 
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Request failed');
+                    const errorText = await response.text();
+                    console.error('❌ API Error Response:', errorText);
+                    let errorMsg = 'Request failed';
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMsg = errorJson.error || errorMsg;
+                    } catch (e) {
+                        errorMsg = errorText || errorMsg;
+                    }
+                    throw new Error(errorMsg);
                 }
                 
-                return await response.json();
+                const result = await response.json();
+                console.log('✅ API Response:', result);
+                return result;
             } catch (error) {
-                console.error('API Error:', error);
+                console.error('❌ API Error:', error);
                 throw error;
             }
         };
@@ -55,24 +67,34 @@
         // Load all data from API
         const loadAllDataFromAPI = async () => {
             try {
-                const [ticketsData, archivedData, deletedData, invoicesData, staffData] = await Promise.all([
-                    callAPI('/tickets'),
-                    callAPI('/tickets?archived=true'),
-                    callAPI('/tickets?deleted=true'),
-                    callAPI('/invoices'),
-                    callAPI('/staff')
-                ]);
+                console.log('📥 Loading data from API...');
                 
-                return {
-                    tickets: ticketsData || [],
-                    archived: archivedData || [],
-                    deleted: deletedData || [],
-                    invoices: invoicesData || [],
-                    staff: (staffData || []).map(s => s.name)
+                const ticketsData = await callAPI('/tickets');
+                const archivedData = await callAPI('/tickets?archived=true');
+                const deletedData = await callAPI('/tickets?deleted=true');
+                const invoicesData = await callAPI('/invoices');
+                const staffData = await callAPI('/staff');
+                
+                const result = {
+                    tickets: Array.isArray(ticketsData) ? ticketsData : [],
+                    archived: Array.isArray(archivedData) ? archivedData : [],
+                    deleted: Array.isArray(deletedData) ? deletedData : [],
+                    invoices: Array.isArray(invoicesData) ? invoicesData : [],
+                    staff: Array.isArray(staffData) ? staffData.map(s => s.name || s) : []
                 };
+                
+                console.log('✅ Data loaded:', result);
+                return result;
             } catch (error) {
-                console.error('Failed to load data:', error);
-                return null;
+                console.error('❌ Failed to load data:', error);
+                alert('Failed to load data: ' + error.message);
+                return {
+                    tickets: [],
+                    archived: [],
+                    deleted: [],
+                    invoices: [],
+                    staff: []
+                };
             }
         };
 
@@ -273,20 +295,33 @@
             };
 
             const createTicket = async () => {
-                if (!newTicket.client || !newTicket.description || !newTicket.assignedTo) {
-                    alert('Please fill in all fields');
+                if (!newTicket.client || !newTicket.description) {
+                    alert('Please fill in client and description');
                     return;
                 }
                 
                 try {
                     const dateSent = newTicket.dateSent || new Date().toISOString().split('T')[0];
                     
-                    const created = await callAPI('/tickets', 'POST', {
-                        ...newTicket,
-                        dateSent: dateSent
-                    });
+                    const ticketData = {
+                        client: newTicket.client,
+                        description: newTicket.description,
+                        priority: newTicket.priority || 'amber',
+                        urgency: newTicket.urgency || 'medium',
+                        assignedTo: newTicket.assignedTo || '',
+                        dateSent: dateSent,
+                        deadline: newTicket.deadline || ''
+                    };
                     
-                    setTickets([created, ...tickets]);
+                    console.log('📝 Creating ticket:', ticketData);
+                    const created = await callAPI('/tickets', 'POST', ticketData);
+                    console.log('✅ Ticket created:', created);
+                    
+                    // Reload all tickets from API to ensure consistency
+                    const freshTickets = await callAPI('/tickets');
+                    console.log('📥 Reloaded tickets:', freshTickets);
+                    setTickets(Array.isArray(freshTickets) ? freshTickets : [created]);
+                    
                     setNewTicket({ 
                         client: '', 
                         description: '', 
@@ -297,7 +332,9 @@
                         deadline: ''
                     });
                     setShowNewTicket(false);
+                    alert('✅ Ticket created successfully!');
                 } catch (error) {
+                    console.error('❌ Create ticket error:', error);
                     alert('Failed to create ticket: ' + error.message);
                 }
             };
