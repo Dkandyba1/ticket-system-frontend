@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket System - Stable Version</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // ============================================================
+        // API CONFIGURATION
+        // ============================================================
+        const API_URL = 'https://ticket-system-api-hpxq.onrender.com/api';
+        
+        function App() {
+            // State
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [currentUser, setCurrentUser] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            
+            // Data
+            const [tickets, setTickets] = useState([]);
+            const [invoices, setInvoices] = useState([]);
+            const [staff, setStaff] = useState([]);
+            
+            // UI State
+            const [view, setView] = useState('tickets');
+            const [showNewTicket, setShowNewTicket] = useState(false);
+            const [showNewInvoice, setShowNewInvoice] = useState(false);
+            
+            // Forms
+            const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+            const [ticketForm, setTicketForm] = useState({
+                client: '',
+                description: '',
+                priority: 'amber',
+                urgency: 'medium',
+                assignedTo: ''
+            });
+            const [invoiceForm, setInvoiceForm] = useState({
+                client: '',
+                hours: '',
+                cost: '',
+                jobDescription: ''
+            });
+            
+            // ============================================================
+            // API CALLS
+            // ============================================================
+            
+            const apiCall = async (endpoint, method = 'GET', data = null) => {
+                const options = {
+                    method,
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                try {
+                    const response = await fetch(API_URL + endpoint, options);
+                    
+                    if (response.status === 401) {
+                        setIsLoggedIn(false);
+                        setCurrentUser(null);
+                        throw new Error('Session expired');
+                    }
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Request failed');
+                    }
+                    
+                    return await response.json();
+                } catch (err) {
+                    console.error('API Error:', err);
+                    throw err;
+                }
+            };
+            
+            // ============================================================
+            // DATA LOADING
+            // ============================================================
+            
+            const loadData = async () => {
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const [ticketsData, invoicesData, staffData] = await Promise.all([
+                        apiCall('/tickets').catch(() => []),
+                        apiCall('/invoices').catch(() => []),
+                        apiCall('/staff').catch(() => [])
+                    ]);
+                    
+                    setTickets(Array.isArray(ticketsData) ? ticketsData : []);
+                    setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+                    setStaff(Array.isArray(staffData) ? staffData : []);
+                    
+                    console.log('✅ Data loaded:', { ticketsData, invoicesData, staffData });
+                } catch (err) {
+                    setError('Failed to load data: ' + err.message);
+                    console.error('Load data error:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            // ============================================================
+            // AUTH
+            // ============================================================
+            
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                
+                if (!loginForm.username || !loginForm.password) {
+                    setError('Please enter username and password');
+                    return;
+                }
+                
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const user = await apiCall('/auth/login', 'POST', loginForm);
+                    console.log('✅ Login successful:', user);
+                    
+                    setCurrentUser(user);
+                    setIsLoggedIn(true);
+                    setLoginForm({ username: '', password: '' });
+                    
+                    // Load data after login
+                    await loadData();
+                } catch (err) {
+                    setError('Login failed: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleLogout = async () => {
+                try {
+                    await apiCall('/auth/logout', 'POST');
+                } catch (err) {
+                    console.error('Logout error:', err);
+                }
+                
+                setIsLoggedIn(false);
+                setCurrentUser(null);
+                setTickets([]);
+                setInvoices([]);
+                setStaff([]);
+            };
+            
+            // ============================================================
+            // TICKETS
+            // ============================================================
+            
+            const handleCreateTicket = async () => {
+                if (!ticketForm.client || !ticketForm.description) {
+                    setError('Client and description are required');
+                    return;
+                }
+                
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const created = await apiCall('/tickets', 'POST', {
+                        ...ticketForm,
+                        dateSent: new Date().toISOString().split('T')[0]
+                    });
+                    
+                    console.log('✅ Ticket created:', created);
+                    
+                    // Reload all tickets to ensure consistency
+                    await loadData();
+                    
+                    setTicketForm({
+                        client: '',
+                        description: '',
+                        priority: 'amber',
+                        urgency: 'medium',
+                        assignedTo: ''
+                    });
+                    setShowNewTicket(false);
+                } catch (err) {
+                    setError('Failed to create ticket: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleCompleteTicket = async (id) => {
+                if (!confirm('Mark this ticket as complete?')) return;
+                
+                try {
+                    setLoading(true);
+                    await apiCall(`/tickets/${id}`, 'PATCH', {
+                        completed: true,
+                        completedAt: new Date().toISOString()
+                    });
+                    
+                    // Reload data
+                    await loadData();
+                } catch (err) {
+                    setError('Failed to complete ticket: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleDeleteTicket = async (id) => {
+                if (!confirm('Delete this ticket?')) return;
+                
+                try {
+                    setLoading(true);
+                    await apiCall(`/tickets/${id}`, 'DELETE');
+                    
+                    // Reload data
+                    await loadData();
+                } catch (err) {
+                    setError('Failed to delete ticket: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            // ============================================================
+            // INVOICES
+            // ============================================================
+            
+            const handleCreateInvoice = async () => {
+                if (!invoiceForm.client || !invoiceForm.hours || !invoiceForm.cost) {
+                    setError('All invoice fields are required');
+                    return;
+                }
+                
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const totalCost = parseFloat(invoiceForm.hours) * parseFloat(invoiceForm.cost);
+                    
+                    await apiCall('/invoices', 'POST', {
+                        ...invoiceForm,
+                        hours: parseFloat(invoiceForm.hours),
+                        cost: parseFloat(invoiceForm.cost),
+                        totalCost
+                    });
+                    
+                    // Reload data
+                    await loadData();
+                    
+                    setInvoiceForm({
+                        client: '',
+                        hours: '',
+                        cost: '',
+                        jobDescription: ''
+                    });
+                    setShowNewInvoice(false);
+                } catch (err) {
+                    setError('Failed to create invoice: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleTogglePaid = async (id) => {
+                const invoice = invoices.find(inv => inv.id === id);
+                if (!invoice) return;
+                
+                try {
+                    setLoading(true);
+                    await apiCall(`/invoices/${id}`, 'PATCH', {
+                        paid: !invoice.paid
+                    });
+                    
+                    // Reload data
+                    await loadData();
+                } catch (err) {
+                    setError('Failed to update invoice: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            // ============================================================
+            // RENDER
+            // ============================================================
+            
+            if (!isLoggedIn) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">🎫 Ticket System</h1>
+                            <p className="text-gray-600 mb-6">Login to continue</p>
+                            
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
+                                    {error}
+                                </div>
+                            )}
+                            
+                            <form onSubmit={handleLogin} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Username
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={loginForm.username}
+                                        onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={loading}
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={loginForm.password}
+                                        onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={loading}
+                                    />
+                                </div>
+                                
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
+                                >
+                                    {loading ? 'Logging in...' : 'Login'}
+                                </button>
+                            </form>
+                            
+                            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                                <p className="text-sm text-blue-800 font-medium">Default credentials:</p>
+                                <p className="text-sm text-blue-600">Username: admin</p>
+                                <p className="text-sm text-blue-600">Password: admin123</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className="min-h-screen bg-gray-100">
+                    {/* Header */}
+                    <header className="bg-white shadow-sm">
+                        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                            <h1 className="text-2xl font-bold text-gray-800">🎫 Ticket System</h1>
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-600">
+                                    {currentUser?.username} ({currentUser?.role})
+                                </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                    
+                    {/* Navigation */}
+                    <nav className="bg-white border-b">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="flex space-x-4">
+                                <button
+                                    onClick={() => setView('tickets')}
+                                    className={`px-4 py-3 font-medium ${
+                                        view === 'tickets'
+                                            ? 'text-blue-600 border-b-2 border-blue-600'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    Tickets ({tickets.length})
+                                </button>
+                                <button
+                                    onClick={() => setView('invoices')}
+                                    className={`px-4 py-3 font-medium ${
+                                        view === 'invoices'
+                                            ? 'text-blue-600 border-b-2 border-blue-600'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    Invoices ({invoices.length})
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+                    
+                    {/* Error Display */}
+                    {error && (
+                        <div className="max-w-7xl mx-auto px-4 mt-4">
+                            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex justify-between items-center">
+                                <span>{error}</span>
+                                <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Loading Indicator */}
+                    {loading && (
+                        <div className="max-w-7xl mx-auto px-4 mt-4">
+                            <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
+                                Loading...
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Content */}
+                    <main className="max-w-7xl mx-auto px-4 py-8">
+                        {/* TICKETS VIEW */}
+                        {view === 'tickets' && (
+                            <div>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800">Tickets</h2>
+                                    <button
+                                        onClick={() => setShowNewTicket(true)}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                    >
+                                        + New Ticket
+                                    </button>
+                                </div>
+                                
+                                {/* New Ticket Modal */}
+                                {showNewTicket && (
+                                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                                            <h3 className="text-xl font-bold mb-4">New Ticket</h3>
+                                            <div className="space-y-4">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Client Name"
+                                                    value={ticketForm.client}
+                                                    onChange={(e) => setTicketForm({...ticketForm, client: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <textarea
+                                                    placeholder="Description"
+                                                    value={ticketForm.description}
+                                                    onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                    rows="3"
+                                                />
+                                                <select
+                                                    value={ticketForm.urgency}
+                                                    onChange={(e) => setTicketForm({...ticketForm, urgency: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                >
+                                                    <option value="low">Low</option>
+                                                    <option value="medium">Medium</option>
+                                                    <option value="high">High</option>
+                                                </select>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Assigned To (optional)"
+                                                    value={ticketForm.assignedTo}
+                                                    onChange={(e) => setTicketForm({...ticketForm, assignedTo: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleCreateTicket}
+                                                        disabled={loading}
+                                                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                                    >
+                                                        Create
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setShowNewTicket(false)}
+                                                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Tickets List */}
+                                <div className="space-y-4">
+                                    {tickets.map(ticket => (
+                                        <div key={ticket.id} className="bg-white p-6 rounded-lg shadow">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <h3 className="text-lg font-bold text-gray-800">{ticket.client}</h3>
+                                                    <p className="text-gray-600 mt-1">{ticket.description}</p>
+                                                    <div className="flex gap-2 mt-3">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                            ticket.urgency === 'high' ? 'bg-red-100 text-red-800' :
+                                                            ticket.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-green-100 text-green-800'
+                                                        }`}>
+                                                            {ticket.urgency}
+                                                        </span>
+                                                        {ticket.assignedTo && (
+                                                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                {ticket.assignedTo}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleCompleteTicket(ticket.id)}
+                                                        className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                                                    >
+                                                        Complete
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteTicket(ticket.id)}
+                                                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    {tickets.length === 0 && !loading && (
+                                        <div className="bg-white p-12 rounded-lg shadow text-center">
+                                            <p className="text-gray-500">No tickets yet. Create your first ticket!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* INVOICES VIEW */}
+                        {view === 'invoices' && (
+                            <div>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800">Invoices</h2>
+                                    <button
+                                        onClick={() => setShowNewInvoice(true)}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                    >
+                                        + New Invoice
+                                    </button>
+                                </div>
+                                
+                                {/* New Invoice Modal */}
+                                {showNewInvoice && (
+                                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                                            <h3 className="text-xl font-bold mb-4">New Invoice</h3>
+                                            <div className="space-y-4">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Client Name"
+                                                    value={invoiceForm.client}
+                                                    onChange={(e) => setInvoiceForm({...invoiceForm, client: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    placeholder="Hours"
+                                                    value={invoiceForm.hours}
+                                                    onChange={(e) => setInvoiceForm({...invoiceForm, hours: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    placeholder="Cost per Hour (£)"
+                                                    value={invoiceForm.cost}
+                                                    onChange={(e) => setInvoiceForm({...invoiceForm, cost: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <textarea
+                                                    placeholder="Job Description"
+                                                    value={invoiceForm.jobDescription}
+                                                    onChange={(e) => setInvoiceForm({...invoiceForm, jobDescription: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                    rows="3"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleCreateInvoice}
+                                                        disabled={loading}
+                                                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                                                    >
+                                                        Create
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setShowNewInvoice(false)}
+                                                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Invoices List */}
+                                <div className="space-y-4">
+                                    {invoices.map(invoice => (
+                                        <div key={invoice.id} className="bg-white p-6 rounded-lg shadow">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <h3 className="text-lg font-bold text-gray-800">{invoice.client}</h3>
+                                                    {invoice.jobDescription && (
+                                                        <p className="text-gray-600 mt-1">{invoice.jobDescription}</p>
+                                                    )}
+                                                    <div className="mt-3 text-sm text-gray-600">
+                                                        <p>{invoice.hours} hours × £{invoice.cost}</p>
+                                                        <p className="text-xl font-bold text-gray-800 mt-1">
+                                                            Total: £{invoice.totalCost}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleTogglePaid(invoice.id)}
+                                                    className={`px-4 py-2 rounded-lg font-medium ${
+                                                        invoice.paid
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                                    }`}
+                                                >
+                                                    {invoice.paid ? '✓ Paid' : 'Mark Paid'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    {invoices.length === 0 && !loading && (
+                                        <div className="bg-white p-12 rounded-lg shadow text-center">
+                                            <p className="text-gray-500">No invoices yet. Create your first invoice!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
