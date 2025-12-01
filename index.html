@@ -3,2166 +3,663 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support Ticketing System</title>
+    <title>Ticket System - Stable Version</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect } = React;
-
+        
         // ============================================================
-        // 🔗 API CONNECTION - LIVE BACKEND
+        // API CONFIGURATION
         // ============================================================
         const API_URL = 'https://ticket-system-api-hpxq.onrender.com/api';
-
-        // API Helper Function with proper session handling
-        const callAPI = async (endpoint, method = 'GET', data = null) => {
-            const options = {
-                method,
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' }
-            };
-            
-            if (data) {
-                options.body = JSON.stringify(data);
-            }
-            
-            try {
-                console.log('🔗 API Call:', method, endpoint, data);
-                const response = await fetch(API_URL + endpoint, options);
-                
-                if (response.status === 401) {
-                    console.error('❌ Session expired');
-                    return { error: 'Session expired', needsLogin: true };
-                }
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('❌ API Error Response:', errorText);
-                    let errorMsg = 'Request failed';
-                    try {
-                        const errorJson = JSON.parse(errorText);
-                        errorMsg = errorJson.error || errorMsg;
-                    } catch (e) {
-                        errorMsg = errorText || errorMsg;
-                    }
-                    throw new Error(errorMsg);
-                }
-                
-                const result = await response.json();
-                console.log('✅ API Response:', result);
-                return result;
-            } catch (error) {
-                console.error('❌ API Error:', error);
-                throw error;
-            }
-        };
-
-        // Load all data from API
-        const loadAllDataFromAPI = async () => {
-            try {
-                console.log('📥 Loading data from API...');
-                
-                const ticketsData = await callAPI('/tickets');
-                const archivedData = await callAPI('/tickets?archived=true');
-                const deletedData = await callAPI('/tickets?deleted=true');
-                const invoicesData = await callAPI('/invoices');
-                const staffData = await callAPI('/staff');
-                
-                const result = {
-                    tickets: Array.isArray(ticketsData) ? ticketsData : [],
-                    archived: Array.isArray(archivedData) ? archivedData : [],
-                    deleted: Array.isArray(deletedData) ? deletedData : [],
-                    invoices: Array.isArray(invoicesData) ? invoicesData : [],
-                    staff: Array.isArray(staffData) ? staffData.map(s => s.name || s) : []
-                };
-                
-                console.log('✅ Data loaded:', result);
-                return result;
-            } catch (error) {
-                console.error('❌ Failed to load data:', error);
-                alert('Failed to load data: ' + error.message);
-                return {
-                    tickets: [],
-                    archived: [],
-                    deleted: [],
-                    invoices: [],
-                    staff: []
-                };
-            }
-        };
-
-        // Icon component that works with Lucide
-        function Icon({ name, size = 16 }) {
-            useEffect(() => {
-                lucide.createIcons();
-            });
-            return <i data-lucide={name} style={{ width: size, height: size }}></i>;
-        }
-
-        function TicketingSystem() {
+        
+        function App() {
+            // State
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [currentUser, setCurrentUser] = useState(null);
-            const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            
+            // Data
             const [tickets, setTickets] = useState([]);
-            const [archivedTickets, setArchivedTickets] = useState([]);
-            const [recycleBin, setRecycleBin] = useState([]);
             const [invoices, setInvoices] = useState([]);
+            const [staff, setStaff] = useState([]);
+            
+            // UI State
+            const [view, setView] = useState('tickets');
             const [showNewTicket, setShowNewTicket] = useState(false);
             const [showNewInvoice, setShowNewInvoice] = useState(false);
-            const [newTicket, setNewTicket] = useState({ 
-                client: '', 
-                description: '', 
+            
+            // Forms
+            const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+            const [ticketForm, setTicketForm] = useState({
+                client: '',
+                description: '',
                 priority: 'amber',
                 urgency: 'medium',
-                assignedTo: '',
-                dateSent: '',
-                deadline: ''
+                assignedTo: ''
             });
-            const [newInvoice, setNewInvoice] = useState({
+            const [invoiceForm, setInvoiceForm] = useState({
                 client: '',
                 hours: '',
                 cost: '',
-                jobDescription: '',
-                jobDate: '',
-                assignedTo: '',
-                chargeTiming: 'now',
-                quickbooks: false,
-                paid: false
+                jobDescription: ''
             });
-            const [currentView, setCurrentView] = useState('dashboard');
-            const [viewArchived, setViewArchived] = useState(false);
-            const [viewRecycleBin, setViewRecycleBin] = useState(false);
-            const [editingTicket, setEditingTicket] = useState(null);
-            const [editForm, setEditForm] = useState({});
-            const [settingsTab, setSettingsTab] = useState('account');
-            const [theme, setTheme] = useState('blue');
-            const [darkMode, setDarkMode] = useState(false);
-            const [logo, setLogo] = useState('');
-            const [showLogoUpload, setShowLogoUpload] = useState(false);
-            const [passwordChange, setPasswordChange] = useState({ current: '', new: '', confirm: '' });
-            const [emailEdit, setEmailEdit] = useState('');
-            const [isEditingEmail, setIsEditingEmail] = useState(false);
-            const [selectedUserForAdmin, setSelectedUserForAdmin] = useState(null);
-            const [resetPasswordInputs, setResetPasswordInputs] = useState({});
             
-            const [users, setUsers] = useState([
-                { id: 1, username: 'admin', password: 'admin123', role: 'admin', email: 'admin@example.com', active: true },
-                { id: 2, username: 'user', password: 'user123', role: 'user', email: 'user@example.com', active: true }
-            ]);
+            // ============================================================
+            // API CALLS
+            // ============================================================
             
-            const [staffMembers, setStaffMembers] = useState([]);
-            
-            const [showAddStaffModal, setShowAddStaffModal] = useState(false);
-            const [newStaffMember, setNewStaffMember] = useState({ name: '', username: '', password: '' });
-
-            useEffect(() => {
-                lucide.createIcons();
-            });
-
-            useEffect(() => {
-                if (isLoggedIn) {
-                    // Start with no tickets - ready for client
-                    setTickets([]);
+            const apiCall = async (endpoint, method = 'GET', data = null) => {
+                const options = {
+                    method,
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
                 }
-            }, [isLoggedIn]);
-
-            // Create/update workload pie chart
-            useEffect(() => {
-                if (settingsTab === 'workload' && currentView === 'settings') {
-                    setTimeout(() => {
-                        const canvas = document.getElementById('workloadChart');
-                        if (!canvas) return;
-
-                        const ctx = canvas.getContext('2d');
-                        
-                        // Calculate workload data
-                        const workloadData = {};
-                        tickets.forEach(ticket => {
-                            workloadData[ticket.assignedTo] = (workloadData[ticket.assignedTo] || 0) + 1;
-                        });
-
-                        const labels = Object.keys(workloadData);
-                        const data = Object.values(workloadData);
-                        
-                        // Generate colors
-                        const colors = [
-                            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-                            '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'
-                        ];
-
-                        // Destroy existing chart if any
-                        if (window.workloadChartInstance) {
-                            window.workloadChartInstance.destroy();
-                        }
-
-                        // Create new chart
-                        if (labels.length > 0) {
-                            window.workloadChartInstance = new Chart(ctx, {
-                                type: 'pie',
-                                data: {
-                                    labels: labels,
-                                    datasets: [{
-                                        data: data,
-                                        backgroundColor: colors.slice(0, labels.length),
-                                        borderWidth: 2,
-                                        borderColor: '#ffffff'
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: true,
-                                    plugins: {
-                                        legend: {
-                                            position: 'bottom',
-                                            labels: {
-                                                padding: 15,
-                                                font: {
-                                                    size: 12
-                                                }
-                                            }
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: function(context) {
-                                                    const label = context.label || '';
-                                                    const value = context.parsed || 0;
-                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                    const percentage = ((value / total) * 100).toFixed(1);
-                                                    return `${label}: ${value} tickets (${percentage}%)`;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    }, 100);
-                }
-            }, [settingsTab, currentView, tickets]);
-
-            const handleLogin = async () => {
+                
                 try {
-                    const data = await callAPI('/auth/login', 'POST', {
-                        username: loginForm.username,
-                        password: loginForm.password
-                    });
+                    const response = await fetch(API_URL + endpoint, options);
                     
-                    if (data.needsLogin || data.error) {
-                        alert('Login failed: ' + (data.error || 'Invalid credentials'));
-                        return;
+                    if (response.status === 401) {
+                        setIsLoggedIn(false);
+                        setCurrentUser(null);
+                        throw new Error('Session expired');
                     }
                     
-                    setCurrentUser(data);
-                    setIsLoggedIn(true);
-                    
-                    // Load all data from API
-                    const loadedData = await loadAllDataFromAPI();
-                    if (loadedData) {
-                        setTickets(loadedData.tickets);
-                        setArchivedTickets(loadedData.archived);
-                        setRecycleBin(loadedData.deleted);
-                        setInvoices(loadedData.invoices);
-                        setStaffMembers(loadedData.staff);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Request failed');
                     }
                     
-                    setLoginForm({ username: '', password: '' });
-                    
-                } catch (error) {
-                    alert('Login failed: ' + error.message);
+                    return await response.json();
+                } catch (err) {
+                    console.error('API Error:', err);
+                    throw err;
                 }
             };
-
+            
+            // ============================================================
+            // DATA LOADING
+            // ============================================================
+            
+            const loadData = async () => {
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const [ticketsData, invoicesData, staffData] = await Promise.all([
+                        apiCall('/tickets').catch(() => []),
+                        apiCall('/invoices').catch(() => []),
+                        apiCall('/staff').catch(() => [])
+                    ]);
+                    
+                    setTickets(Array.isArray(ticketsData) ? ticketsData : []);
+                    setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+                    setStaff(Array.isArray(staffData) ? staffData : []);
+                    
+                    console.log('✅ Data loaded:', { ticketsData, invoicesData, staffData });
+                } catch (err) {
+                    setError('Failed to load data: ' + err.message);
+                    console.error('Load data error:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            // ============================================================
+            // AUTH
+            // ============================================================
+            
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                
+                if (!loginForm.username || !loginForm.password) {
+                    setError('Please enter username and password');
+                    return;
+                }
+                
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const user = await apiCall('/auth/login', 'POST', loginForm);
+                    console.log('✅ Login successful:', user);
+                    
+                    setCurrentUser(user);
+                    setIsLoggedIn(true);
+                    setLoginForm({ username: '', password: '' });
+                    
+                    // Load data after login
+                    await loadData();
+                } catch (err) {
+                    setError('Login failed: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
             const handleLogout = async () => {
                 try {
-                    await callAPI('/auth/logout', 'POST');
-                } catch (error) {
-                    console.error('Logout error:', error);
+                    await apiCall('/auth/logout', 'POST');
+                } catch (err) {
+                    console.error('Logout error:', err);
                 }
                 
                 setIsLoggedIn(false);
                 setCurrentUser(null);
                 setTickets([]);
                 setInvoices([]);
-                setArchivedTickets([]);
-                setRecycleBin([]);
+                setStaff([]);
             };
-
-            const createTicket = async () => {
-                if (!newTicket.client || !newTicket.description) {
-                    alert('Please fill in client and description');
+            
+            // ============================================================
+            // TICKETS
+            // ============================================================
+            
+            const handleCreateTicket = async () => {
+                if (!ticketForm.client || !ticketForm.description) {
+                    setError('Client and description are required');
                     return;
                 }
                 
                 try {
-                    const dateSent = newTicket.dateSent || new Date().toISOString().split('T')[0];
+                    setLoading(true);
+                    setError(null);
                     
-                    const ticketData = {
-                        client: newTicket.client,
-                        description: newTicket.description,
-                        priority: newTicket.priority || 'amber',
-                        urgency: newTicket.urgency || 'medium',
-                        assignedTo: newTicket.assignedTo || '',
-                        dateSent: dateSent,
-                        deadline: newTicket.deadline || ''
-                    };
+                    const created = await apiCall('/tickets', 'POST', {
+                        ...ticketForm,
+                        dateSent: new Date().toISOString().split('T')[0]
+                    });
                     
-                    console.log('📝 Creating ticket:', ticketData);
-                    const created = await callAPI('/tickets', 'POST', ticketData);
                     console.log('✅ Ticket created:', created);
                     
-                    // Reload all tickets from API to ensure consistency
-                    const freshTickets = await callAPI('/tickets');
-                    console.log('📥 Reloaded tickets:', freshTickets);
-                    setTickets(Array.isArray(freshTickets) ? freshTickets : [created]);
+                    // Reload all tickets to ensure consistency
+                    await loadData();
                     
-                    setNewTicket({ 
-                        client: '', 
-                        description: '', 
-                        priority: 'amber', 
+                    setTicketForm({
+                        client: '',
+                        description: '',
+                        priority: 'amber',
                         urgency: 'medium',
-                        assignedTo: '',
-                        dateSent: '',
-                        deadline: ''
+                        assignedTo: ''
                     });
                     setShowNewTicket(false);
-                    alert('✅ Ticket created successfully!');
-                } catch (error) {
-                    console.error('❌ Create ticket error:', error);
-                    alert('Failed to create ticket: ' + error.message);
+                } catch (err) {
+                    setError('Failed to create ticket: ' + err.message);
+                } finally {
+                    setLoading(false);
                 }
             };
-
-            const createInvoice = async () => {
-                if (!newInvoice.client || !newInvoice.hours || !newInvoice.cost) {
-                    alert('Please fill in required fields');
+            
+            const handleCompleteTicket = async (id) => {
+                if (!confirm('Mark this ticket as complete?')) return;
+                
+                try {
+                    setLoading(true);
+                    await apiCall(`/tickets/${id}`, 'PATCH', {
+                        completed: true,
+                        completedAt: new Date().toISOString()
+                    });
+                    
+                    // Reload data
+                    await loadData();
+                } catch (err) {
+                    setError('Failed to complete ticket: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleDeleteTicket = async (id) => {
+                if (!confirm('Delete this ticket?')) return;
+                
+                try {
+                    setLoading(true);
+                    await apiCall(`/tickets/${id}`, 'DELETE');
+                    
+                    // Reload data
+                    await loadData();
+                } catch (err) {
+                    setError('Failed to delete ticket: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            // ============================================================
+            // INVOICES
+            // ============================================================
+            
+            const handleCreateInvoice = async () => {
+                if (!invoiceForm.client || !invoiceForm.hours || !invoiceForm.cost) {
+                    setError('All invoice fields are required');
                     return;
                 }
                 
                 try {
-                    const totalCost = parseFloat(newInvoice.hours) * parseFloat(newInvoice.cost);
+                    setLoading(true);
+                    setError(null);
                     
-                    const created = await callAPI('/invoices', 'POST', {
-                        ...newInvoice,
-                        hours: parseFloat(newInvoice.hours),
-                        cost: parseFloat(newInvoice.cost),
-                        totalCost: totalCost
+                    const totalCost = parseFloat(invoiceForm.hours) * parseFloat(invoiceForm.cost);
+                    
+                    await apiCall('/invoices', 'POST', {
+                        ...invoiceForm,
+                        hours: parseFloat(invoiceForm.hours),
+                        cost: parseFloat(invoiceForm.cost),
+                        totalCost
                     });
                     
-                    setInvoices([created, ...invoices]);
-                    setNewInvoice({
-                        client: '', hours: '', cost: '', jobDescription: '', 
-                        jobDate: '', assignedTo: '', chargeTiming: 'now', quickbooks: false, paid: false
+                    // Reload data
+                    await loadData();
+                    
+                    setInvoiceForm({
+                        client: '',
+                        hours: '',
+                        cost: '',
+                        jobDescription: ''
                     });
                     setShowNewInvoice(false);
-                } catch (error) {
-                    alert('Failed to create invoice: ' + error.message);
+                } catch (err) {
+                    setError('Failed to create invoice: ' + err.message);
+                } finally {
+                    setLoading(false);
                 }
             };
-
-            const toggleInvoicePaid = async (id) => {
+            
+            const handleTogglePaid = async (id) => {
+                const invoice = invoices.find(inv => inv.id === id);
+                if (!invoice) return;
+                
                 try {
-                    const invoice = invoices.find(inv => inv.id === id);
-                    await callAPI(`/invoices/${id}`, 'PATCH', { paid: !invoice.paid });
-                    
-                    setInvoices(invoices.map(inv => 
-                        inv.id === id ? { ...inv, paid: !inv.paid } : inv
-                    ));
-                } catch (error) {
-                    alert('Failed to update invoice: ' + error.message);
-                }
-            };
-
-            const deleteInvoice = async (id) => {
-                if (window.confirm('Delete this invoice?')) {
-                    try {
-                        await callAPI(`/invoices/${id}`, 'DELETE');
-                        setInvoices(invoices.filter(i => i.id !== id));
-                    } catch (error) {
-                        alert('Failed to delete invoice: ' + error.message);
-                    }
-                }
-            };
-
-            const startEdit = (ticket) => {
-                setEditingTicket(ticket.id);
-                setEditForm({ ...ticket });
-            };
-
-            const saveEdit = async (id) => {
-                try {
-                    await callAPI(`/tickets/${id}`, 'PATCH', editForm);
-                    setTickets(tickets.map(t => t.id === id ? { ...t, ...editForm } : t));
-                    setEditingTicket(null);
-                } catch (error) {
-                    alert('Failed to update ticket: ' + error.message);
-                }
-            };
-
-            const deleteTicket = async (id) => {
-                if (window.confirm('Move this ticket to Recycle Bin?')) {
-                    try {
-                        await callAPI(`/tickets/${id}?from=active`, 'DELETE');
-                        const ticket = tickets.find(t => t.id === id);
-                        if (ticket) {
-                            setRecycleBin([...recycleBin, { ...ticket, deletedAt: new Date().toISOString(), deletedFrom: 'active' }]);
-                            setTickets(tickets.filter(t => t.id !== id));
-                        }
-                    } catch (error) {
-                        alert('Failed to delete ticket: ' + error.message);
-                    }
-                }
-            };
-
-            const markComplete = async (id) => {
-                try {
-                    await callAPI(`/tickets/${id}`, 'PATCH', {
-                        completed: true,
-                        completedAt: new Date().toISOString(),
-                        archivedAt: new Date().toISOString()
+                    setLoading(true);
+                    await apiCall(`/invoices/${id}`, 'PATCH', {
+                        paid: !invoice.paid
                     });
                     
-                    const ticket = tickets.find(t => t.id === id);
-                    if (ticket) {
-                        const completedTicket = { ...ticket, completed: true, completedAt: new Date().toISOString() };
-                        setArchivedTickets([...archivedTickets, { ...completedTicket, archivedAt: new Date().toISOString() }]);
-                        setTickets(tickets.filter(t => t.id !== id));
-                    }
-                } catch (error) {
-                    alert('Failed to complete ticket: ' + error.message);
+                    // Reload data
+                    await loadData();
+                } catch (err) {
+                    setError('Failed to update invoice: ' + err.message);
+                } finally {
+                    setLoading(false);
                 }
             };
-
-            const archiveTicket = (id) => {
-                const ticket = tickets.find(t => t.id === id);
-                if (ticket) {
-                    setArchivedTickets([...archivedTickets, { ...ticket, archivedAt: new Date().toISOString() }]);
-                    setTickets(tickets.filter(t => t.id !== id));
-                }
-            };
-
-            const unarchiveTicket = (id) => {
-                const ticket = archivedTickets.find(t => t.id === id);
-                if (ticket) {
-                    // Remove archived metadata and reset completed status
-                    const { archivedAt, completedAt, completed, ...ticketData } = ticket;
-                    const reopenedTicket = { ...ticketData, completed: false };
-                    setTickets([reopenedTicket, ...tickets]);
-                    setArchivedTickets(archivedTickets.filter(t => t.id !== id));
-                }
-            };
-
-            const deleteArchivedTicket = (id) => {
-                if (window.confirm('Move this ticket to Recycle Bin?')) {
-                    const ticket = archivedTickets.find(t => t.id === id);
-                    if (ticket) {
-                        setRecycleBin([...recycleBin, { ...ticket, deletedAt: new Date().toISOString(), deletedFrom: 'archived' }]);
-                        setArchivedTickets(archivedTickets.filter(t => t.id !== id));
-                    }
-                }
-            };
-
-            const restoreFromBin = (id) => {
-                const ticket = recycleBin.find(t => t.id === id);
-                if (ticket) {
-                    const { deletedAt, deletedFrom, ...ticketData } = ticket;
-                    if (deletedFrom === 'archived') {
-                        setArchivedTickets([...archivedTickets, ticketData]);
-                    } else {
-                        setTickets([...tickets, ticketData]);
-                    }
-                    setRecycleBin(recycleBin.filter(t => t.id !== id));
-                }
-            };
-
-            const permanentDelete = (id) => {
-                if (window.confirm('Permanently delete this ticket? This cannot be undone!')) {
-                    setRecycleBin(recycleBin.filter(t => t.id !== id));
-                }
-            };
-
-            const emptyRecycleBin = () => {
-                if (window.confirm(`Permanently delete all ${recycleBin.length} tickets? This cannot be undone!`)) {
-                    setRecycleBin([]);
-                }
-            };
-
-            const addStaffMember = () => {
-                if (!newStaffMember.name.trim() || !newStaffMember.username.trim() || !newStaffMember.password.trim()) {
-                    alert('Please fill in all fields');
-                    return;
-                }
-                
-                // Check if username already exists
-                if (users.find(u => u.username === newStaffMember.username)) {
-                    alert('Username already exists');
-                    return;
-                }
-                
-                // Add to staff members list
-                setStaffMembers([...staffMembers, newStaffMember.name.trim()]);
-                
-                // Create user account for the staff member
-                const newUserAccount = {
-                    id: Date.now(),
-                    username: newStaffMember.username.trim(),
-                    password: newStaffMember.password,
-                    email: `${newStaffMember.username.trim()}@company.com`,
-                    role: 'user',
-                    active: true
-                };
-                setUsers([...users, newUserAccount]);
-                
-                // Reset form
-                setNewStaffMember({ name: '', username: '', password: '' });
-                setShowAddStaffModal(false);
-                
-                alert(`Staff member added!\nName: ${newStaffMember.name}\nUsername: ${newStaffMember.username}\nPassword: ${newStaffMember.password}\n\nThey can now login with these credentials.`);
-            };
-
-            const changePassword = () => {
-                if (!passwordChange.current || !passwordChange.new || !passwordChange.confirm) {
-                    alert('Please fill in all fields');
-                    return;
-                }
-                
-                if (currentUser.password !== passwordChange.current) {
-                    alert('Current password is incorrect');
-                    return;
-                }
-                
-                if (passwordChange.new !== passwordChange.confirm) {
-                    alert('New passwords do not match');
-                    return;
-                }
-                
-                if (passwordChange.new.length < 6) {
-                    alert('New password must be at least 6 characters');
-                    return;
-                }
-                
-                // Update password in users array
-                setUsers(users.map(u => 
-                    u.id === currentUser.id ? { ...u, password: passwordChange.new } : u
-                ));
-                
-                // Update current user
-                setCurrentUser({ ...currentUser, password: passwordChange.new });
-                
-                // Reset form
-                setPasswordChange({ current: '', new: '', confirm: '' });
-                
-                alert('Password changed successfully!');
-            };
-
-            const saveEmail = () => {
-                if (!emailEdit.trim()) {
-                    alert('Email cannot be empty');
-                    return;
-                }
-                
-                // Basic email validation
-                if (!emailEdit.includes('@')) {
-                    alert('Please enter a valid email address');
-                    return;
-                }
-                
-                // Update email in users array
-                setUsers(users.map(u => 
-                    u.id === currentUser.id ? { ...u, email: emailEdit } : u
-                ));
-                
-                // Update current user
-                setCurrentUser({ ...currentUser, email: emailEdit });
-                
-                setIsEditingEmail(false);
-                alert('Email updated successfully!');
-            };
-
-            const adminResetUserPassword = (userId, newPassword) => {
-                if (!newPassword || newPassword.length < 6) {
-                    alert('Password must be at least 6 characters');
-                    return;
-                }
-                
-                setUsers(users.map(u => 
-                    u.id === userId ? { ...u, password: newPassword } : u
-                ));
-                
-                // Clear the input
-                setResetPasswordInputs(prev => ({ ...prev, [userId]: '' }));
-                
-                alert('Password reset successfully!');
-            };
-
-            const adminChangeUserRole = (userId, newRole) => {
-                setUsers(users.map(u => 
-                    u.id === userId ? { ...u, role: newRole } : u
-                ));
-                
-                alert(`Role changed to ${newRole} successfully!`);
-            };
-
-            const formatDateTime = (dateString) => {
-                const date = new Date(dateString);
-                return {
-                    date: date.toLocaleDateString('en-GB'),
-                    time: date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-                };
-            };
-
-            const getPriorityColor = (priority) => {
-                const colors = { red: 'bg-red-500', amber: 'bg-amber-500', green: 'bg-green-500' };
-                return colors[priority] || 'bg-gray-500';
-            };
-
-            const getUrgencyColor = (urgency) => {
-                const colors = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-green-500' };
-                return colors[urgency] || 'bg-gray-500';
-            };
-
-            const getUrgencyLabel = (urgency) => {
-                const labels = { high: 'High', medium: 'Medium', low: 'Low' };
-                return labels[urgency] || 'Unknown';
-            };
-
-            const formatCurrency = (amount) => {
-                return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-            };
-
-            // Get theme colors based on selected theme
-            const getThemeColors = () => {
-                const themes = {
-                    blue: {
-                        primary: 'bg-blue-600',
-                        primaryHover: 'hover:bg-blue-700',
-                        primaryText: 'text-blue-600',
-                        primaryBg: 'bg-blue-50',
-                        primaryBorder: 'border-blue-600',
-                        gradient: 'from-blue-50 to-indigo-100'
-                    },
-                    green: {
-                        primary: 'bg-green-600',
-                        primaryHover: 'hover:bg-green-700',
-                        primaryText: 'text-green-600',
-                        primaryBg: 'bg-green-50',
-                        primaryBorder: 'border-green-600',
-                        gradient: 'from-green-50 to-emerald-100'
-                    },
-                    purple: {
-                        primary: 'bg-purple-600',
-                        primaryHover: 'hover:bg-purple-700',
-                        primaryText: 'text-purple-600',
-                        primaryBg: 'bg-purple-50',
-                        primaryBorder: 'border-purple-600',
-                        gradient: 'from-purple-50 to-violet-100'
-                    },
-                    orange: {
-                        primary: 'bg-orange-600',
-                        primaryHover: 'hover:bg-orange-700',
-                        primaryText: 'text-orange-600',
-                        primaryBg: 'bg-orange-50',
-                        primaryBorder: 'border-orange-600',
-                        gradient: 'from-orange-50 to-amber-100'
-                    },
-                    red: {
-                        primary: 'bg-red-600',
-                        primaryHover: 'hover:bg-red-700',
-                        primaryText: 'text-red-600',
-                        primaryBg: 'bg-red-50',
-                        primaryBorder: 'border-red-600',
-                        gradient: 'from-red-50 to-rose-100'
-                    }
-                };
-                return themes[theme] || themes.blue;
-            };
-
-            const currentTheme = getThemeColors();
-
-            // LOGIN SCREEN
+            
+            // ============================================================
+            // RENDER
+            // ============================================================
+            
             if (!isLoggedIn) {
                 return (
-                    <div className={`min-h-screen bg-gradient-to-br ${darkMode ? 'from-gray-900 to-gray-800' : currentTheme.gradient} flex items-center justify-center p-4`}>
-                        <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow-xl p-8 w-full max-w-md`}>
-                            <div className="text-center mb-8">
-                                <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'} mb-2`}>Ticketing System</h1>
-                                <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Sign in to manage support tickets</p>
-                            </div>
+                    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">🎫 Ticket System</h1>
+                            <p className="text-gray-600 mb-6">Login to continue</p>
                             
-                            <div className="space-y-4">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
+                                    {error}
+                                </div>
+                            )}
+                            
+                            <form onSubmit={handleLogin} className="space-y-4">
                                 <div>
-                                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Username</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Username
+                                    </label>
                                     <input
                                         type="text"
                                         value={loginForm.username}
-                                        onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                                        className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-${theme}-500`}
+                                        onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={loading}
                                     />
                                 </div>
                                 
                                 <div>
-                                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Password</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Password
+                                    </label>
                                     <input
                                         type="password"
                                         value={loginForm.password}
-                                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                                        className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-${theme}-500`}
+                                        onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled={loading}
                                     />
                                 </div>
                                 
                                 <button
-                                    onClick={handleLogin}
-                                    className={`w-full ${currentTheme.primary} ${currentTheme.primaryHover} text-white py-2 rounded-lg font-medium`}
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
                                 >
-                                    Sign In
+                                    {loading ? 'Logging in...' : 'Login'}
                                 </button>
+                            </form>
+                            
+                            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                                <p className="text-sm text-blue-800 font-medium">Default credentials:</p>
+                                <p className="text-sm text-blue-600">Username: admin</p>
+                                <p className="text-sm text-blue-600">Password: admin123</p>
                             </div>
                         </div>
                     </div>
                 );
             }
-
-            const displayTickets = viewRecycleBin ? recycleBin : (viewArchived ? archivedTickets : tickets);
-
-            // MAIN APP
+            
             return (
-                <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                <div className="min-h-screen bg-gray-100">
                     {/* Header */}
-                    <header className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-sm border-b`}>
-                        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                    <header className="bg-white shadow-sm">
+                        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                            <h1 className="text-2xl font-bold text-gray-800">🎫 Ticket System</h1>
                             <div className="flex items-center gap-4">
-                                {logo ? (
-                                    <img 
-                                        src={logo} 
-                                        alt="Logo" 
-                                        className="h-10 cursor-pointer hover:opacity-80"
-                                        onClick={() => setShowLogoUpload(true)}
-                                        title="Click to change logo"
-                                    />
-                                ) : (
-                                    <button
-                                        onClick={() => setShowLogoUpload(true)}
-                                        className={`flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-dashed ${
-                                            darkMode ? 'border-gray-600 text-gray-400 hover:border-gray-500' : 'border-gray-300 text-gray-500 hover:border-gray-400'
-                                        }`}
-                                        title="Add logo"
-                                    >
-                                        <Icon name="image" size={20} />
-                                        <span className="text-sm">Add Logo</span>
-                                    </button>
-                                )}
-                                <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Support System</h1>
-                            </div>
-                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-600">
+                                    {currentUser?.username} ({currentUser?.role})
+                                </span>
                                 <button
-                                    onClick={() => setDarkMode(!darkMode)}
-                                    className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 text-yellow-400' : 'bg-gray-100 text-gray-600'}`}
-                                    title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                                    onClick={handleLogout}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                                 >
-                                    <Icon name={darkMode ? 'sun' : 'moon'} size={20} />
-                                </button>
-                                <div className="flex items-center gap-2">
-                                    <Icon name="user" size={20} />
-                                    <span className={`font-medium ${darkMode ? 'text-white' : ''}`}>{currentUser.username}</span>
-                                    <span className={`text-xs ${currentTheme.primary} text-white px-2 py-1 rounded`}>{currentUser.role}</span>
-                                </div>
-                                <button onClick={handleLogout} className={`flex items-center gap-2 px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-700'} rounded-lg`}>
-                                    <Icon name="log-out" />
                                     Logout
                                 </button>
                             </div>
                         </div>
                     </header>
-
-                    <div className="max-w-7xl mx-auto px-4 py-8">
-                        {/* Navigation */}
-                        <div className="flex gap-2 mb-6">
-                            <button
-                                onClick={() => setCurrentView('dashboard')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                                    currentView === 'dashboard' 
-                                        ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                }`}
-                            >
-                                <Icon name="layout-dashboard" />
-                                Dashboard
-                            </button>
-                            <button
-                                onClick={() => setCurrentView('tickets')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                                    currentView === 'tickets' 
-                                        ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                }`}
-                            >
-                                <Icon name="file-text" />
-                                Tickets
-                            </button>
-                            <button
-                                onClick={() => setCurrentView('invoices')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                                    currentView === 'invoices' 
-                                        ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                }`}
-                            >
-                                <Icon name="dollar-sign" />
-                                Invoices ({invoices.length})
-                            </button>
-                            <button
-                                onClick={() => setCurrentView('settings')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                                    currentView === 'settings' 
-                                        ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                }`}
-                            >
-                                <Icon name="settings" />
-                                Settings
-                            </button>
+                    
+                    {/* Navigation */}
+                    <nav className="bg-white border-b">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="flex space-x-4">
+                                <button
+                                    onClick={() => setView('tickets')}
+                                    className={`px-4 py-3 font-medium ${
+                                        view === 'tickets'
+                                            ? 'text-blue-600 border-b-2 border-blue-600'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    Tickets ({tickets.length})
+                                </button>
+                                <button
+                                    onClick={() => setView('invoices')}
+                                    className={`px-4 py-3 font-medium ${
+                                        view === 'invoices'
+                                            ? 'text-blue-600 border-b-2 border-blue-600'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    Invoices ({invoices.length})
+                                </button>
+                            </div>
                         </div>
-
-                        {/* DASHBOARD VIEW */}
-                        {currentView === 'dashboard' && (
-                            <>
-                                <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Dashboard Overview</h2>
-                                
-                                {/* Stats Cards */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                                    {/* Active Tickets Card */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Active Tickets</h3>
-                                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                <Icon name="file-text" className="text-blue-600" size={20} />
-                                            </div>
-                                        </div>
-                                        <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{tickets.length}</p>
-                                        <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            {tickets.filter(t => t.urgency === 'high').length} high priority
-                                        </p>
-                                    </div>
-
-                                    {/* Archived Tickets Card */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Completed</h3>
-                                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                                <Icon name="check-circle" className="text-green-600" size={20} />
-                                            </div>
-                                        </div>
-                                        <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{archivedTickets.length}</p>
-                                        <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            Total completed
-                                        </p>
-                                    </div>
-
-                                    {/* Invoices Card */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Invoices</h3>
-                                            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                                <Icon name="dollar-sign" className="text-yellow-600" size={20} />
-                                            </div>
-                                        </div>
-                                        <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{invoices.length}</p>
-                                        <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            {invoices.filter(inv => !inv.paid).length} unpaid
-                                        </p>
-                                    </div>
-
-                                    {/* Revenue Card */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Revenue</h3>
-                                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                                <Icon name="trending-up" className="text-green-600" size={20} />
-                                            </div>
-                                        </div>
-                                        <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                            {formatCurrency(invoices.reduce((sum, inv) => sum + inv.totalCost, 0))}
-                                        </p>
-                                        <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            {formatCurrency(invoices.filter(inv => inv.paid).reduce((sum, inv) => sum + inv.totalCost, 0))} paid
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Urgency Breakdown */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                                    {/* Ticket Urgency */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Ticket Urgency</h3>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <div className="flex justify-between mb-2">
-                                                    <span className={`flex items-center gap-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                                        High
-                                                    </span>
-                                                    <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                        {tickets.filter(t => t.urgency === 'high').length}
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                                    <div 
-                                                        className="bg-red-500 h-2 rounded-full" 
-                                                        style={{width: `${tickets.length ? (tickets.filter(t => t.urgency === 'high').length / tickets.length * 100) : 0}%`}}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between mb-2">
-                                                    <span className={`flex items-center gap-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                        <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                                                        Medium
-                                                    </span>
-                                                    <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                        {tickets.filter(t => t.urgency === 'medium').length}
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                                    <div 
-                                                        className="bg-amber-500 h-2 rounded-full" 
-                                                        style={{width: `${tickets.length ? (tickets.filter(t => t.urgency === 'medium').length / tickets.length * 100) : 0}%`}}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between mb-2">
-                                                    <span className={`flex items-center gap-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                                        Low
-                                                    </span>
-                                                    <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                        {tickets.filter(t => t.urgency === 'low').length}
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                                    <div 
-                                                        className="bg-green-500 h-2 rounded-full" 
-                                                        style={{width: `${tickets.length ? (tickets.filter(t => t.urgency === 'low').length / tickets.length * 100) : 0}%`}}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Staff Workload */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Staff Workload</h3>
-                                        <div className="space-y-3">
-                                            {staffMembers.map(staff => {
-                                                const staffTickets = tickets.filter(t => t.assignedTo === staff).length;
-                                                const maxTickets = Math.max(...staffMembers.map(s => tickets.filter(t => t.assignedTo === s).length), 1);
-                                                return (
-                                                    <div key={staff} className={`flex items-center gap-3 p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                                                        <div className={`flex-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{staff}</div>
-                                                        <div className="flex items-center gap-2 flex-1">
-                                                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                                                <div 
-                                                                    className={`${currentTheme.primary} h-2 rounded-full`}
-                                                                    style={{width: `${(staffTickets / maxTickets * 100)}%`}}
-                                                                ></div>
-                                                            </div>
-                                                            <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'} w-8 text-right`}>
-                                                                {staffTickets}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Pie Chart and Monthly Recap */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                                    {/* Urgency Pie Chart */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Urgency Distribution</h3>
-                                        <div className="flex items-center justify-center">
-                                            <svg width="200" height="200" viewBox="0 0 200 200">
-                                                {(() => {
-                                                    const highCount = tickets.filter(t => t.urgency === 'high').length;
-                                                    const mediumCount = tickets.filter(t => t.urgency === 'medium').length;
-                                                    const lowCount = tickets.filter(t => t.urgency === 'low').length;
-                                                    const total = highCount + mediumCount + lowCount || 1;
-                                                    
-                                                    const highPercent = (highCount / total) * 100;
-                                                    const mediumPercent = (mediumCount / total) * 100;
-                                                    const lowPercent = (lowCount / total) * 100;
-                                                    
-                                                    let currentAngle = 0;
-                                                    const centerX = 100;
-                                                    const centerY = 100;
-                                                    const radius = 80;
-                                                    
-                                                    const createSlice = (percent, color) => {
-                                                        const angle = (percent / 100) * 360;
-                                                        const startAngle = currentAngle;
-                                                        const endAngle = currentAngle + angle;
-                                                        currentAngle = endAngle;
-                                                        
-                                                        const startRad = (startAngle - 90) * Math.PI / 180;
-                                                        const endRad = (endAngle - 90) * Math.PI / 180;
-                                                        
-                                                        const x1 = centerX + radius * Math.cos(startRad);
-                                                        const y1 = centerY + radius * Math.sin(startRad);
-                                                        const x2 = centerX + radius * Math.cos(endRad);
-                                                        const y2 = centerY + radius * Math.sin(endRad);
-                                                        
-                                                        const largeArc = angle > 180 ? 1 : 0;
-                                                        
-                                                        return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-                                                    };
-                                                    
-                                                    return (
-                                                        <>
-                                                            {highPercent > 0 && <path d={createSlice(highPercent, '#ef4444')} fill="#ef4444" />}
-                                                            {mediumPercent > 0 && <path d={createSlice(mediumPercent, '#f59e0b')} fill="#f59e0b" />}
-                                                            {lowPercent > 0 && <path d={createSlice(lowPercent, '#10b981')} fill="#10b981" />}
-                                                        </>
-                                                    );
-                                                })()}
-                                            </svg>
-                                        </div>
-                                        <div className="mt-4 space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 rounded bg-red-500"></div>
-                                                    <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>High</span>
-                                                </div>
-                                                <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                    {tickets.filter(t => t.urgency === 'high').length} ({tickets.length ? Math.round((tickets.filter(t => t.urgency === 'high').length / tickets.length) * 100) : 0}%)
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 rounded bg-amber-500"></div>
-                                                    <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Medium</span>
-                                                </div>
-                                                <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                    {tickets.filter(t => t.urgency === 'medium').length} ({tickets.length ? Math.round((tickets.filter(t => t.urgency === 'medium').length / tickets.length) * 100) : 0}%)
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 rounded bg-green-500"></div>
-                                                    <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Low</span>
-                                                </div>
-                                                <span className={`font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                    {tickets.filter(t => t.urgency === 'low').length} ({tickets.length ? Math.round((tickets.filter(t => t.urgency === 'low').length / tickets.length) * 100) : 0}%)
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Monthly Recap */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>This Month's Performance</h3>
-                                        <div className="space-y-4">
-                                            {(() => {
-                                                const now = new Date();
-                                                const currentMonth = now.getMonth();
-                                                const currentYear = now.getFullYear();
-                                                
-                                                const thisMonthArchived = archivedTickets.filter(t => {
-                                                    const completedDate = new Date(t.completedAt || t.archivedAt);
-                                                    return completedDate.getMonth() === currentMonth && completedDate.getFullYear() === currentYear;
-                                                }).length;
-                                                
-                                                const thisMonthInvoices = invoices.filter(inv => {
-                                                    const invDate = new Date(inv.jobDate);
-                                                    return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
-                                                });
-                                                
-                                                const thisMonthRevenue = thisMonthInvoices.reduce((sum, inv) => sum + inv.totalCost, 0);
-                                                const thisMonthPaid = thisMonthInvoices.filter(inv => inv.paid).reduce((sum, inv) => sum + inv.totalCost, 0);
-                                                
-                                                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                                
-                                                return (
-                                                    <>
-                                                        <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
-                                                            <div className="flex items-center justify-between">
-                                                                <div>
-                                                                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Month</p>
-                                                                    <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                                                                        {monthNames[currentMonth]} {currentYear}
-                                                                    </p>
-                                                                </div>
-                                                                <Icon name="calendar" size={32} className={darkMode ? 'text-blue-400' : 'text-blue-600'} />
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-green-50'}`}>
-                                                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Completed</p>
-                                                                <p className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>{thisMonthArchived}</p>
-                                                            </div>
-                                                            <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-yellow-50'}`}>
-                                                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Invoices</p>
-                                                                <p className={`text-2xl font-bold ${darkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>{thisMonthInvoices.length}</p>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-purple-50'}`}>
-                                                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Revenue</p>
-                                                            <p className={`text-2xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                                                                {formatCurrency(thisMonthRevenue)}
-                                                            </p>
-                                                            <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-600'} mt-1`}>
-                                                                {formatCurrency(thisMonthPaid)} collected
-                                                            </p>
-                                                        </div>
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Recent Activity */}
-                                <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                    <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Recent Tickets</h3>
-                                    <div className="space-y-3">
-                                        {tickets.slice(0, 5).map(ticket => (
-                                            <div key={ticket.id} className={`flex items-center justify-between p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                                                <div className="flex items-center gap-3 flex-1">
-                                                    <div className={`w-3 h-3 rounded-full ${getUrgencyColor(ticket.urgency)}`}></div>
-                                                    <div className="flex-1">
-                                                        <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{ticket.client}</p>
-                                                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                            {ticket.description.length > 50 ? ticket.description.substring(0, 50) + '...' : ticket.description}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{ticket.assignedTo}</p>
-                                                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                                        {ticket.deadline ? new Date(ticket.deadline).toLocaleDateString() : 'No deadline'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {tickets.length === 0 && (
-                                            <p className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                No active tickets. Create one to get started!
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-
+                    </nav>
+                    
+                    {/* Error Display */}
+                    {error && (
+                        <div className="max-w-7xl mx-auto px-4 mt-4">
+                            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex justify-between items-center">
+                                <span>{error}</span>
+                                <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Loading Indicator */}
+                    {loading && (
+                        <div className="max-w-7xl mx-auto px-4 mt-4">
+                            <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
+                                Loading...
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Content */}
+                    <main className="max-w-7xl mx-auto px-4 py-8">
                         {/* TICKETS VIEW */}
-                        {currentView === 'tickets' && (
-                            <>
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => { setViewArchived(false); setViewRecycleBin(false); }}
-                                            className={`px-4 py-2 rounded-lg font-medium ${
-                                                !viewArchived && !viewRecycleBin
-                                                    ? `${currentTheme.primary} text-white` 
-                                                    : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            Active ({tickets.length})
-                                        </button>
-                                        <button
-                                            onClick={() => { setViewArchived(true); setViewRecycleBin(false); }}
-                                            className={`px-4 py-2 rounded-lg font-medium ${
-                                                viewArchived && !viewRecycleBin
-                                                    ? `${currentTheme.primary} text-white` 
-                                                    : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            Archived ({archivedTickets.length})
-                                        </button>
-                                        <button
-                                            onClick={() => { setViewRecycleBin(true); setViewArchived(false); }}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                                                viewRecycleBin
-                                                    ? `${currentTheme.primary} text-white` 
-                                                    : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            <Icon name="trash-2" size={16} />
-                                            Recycle Bin ({recycleBin.length})
-                                        </button>
-                                    </div>
-                                    
-                                    {!viewArchived && !viewRecycleBin && (
-                                        <button
-                                            onClick={() => setShowNewTicket(true)}
-                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                                        >
-                                            <Icon name="plus" />
-                                            New Ticket
-                                        </button>
-                                    )}
-                                    
-                                    {viewRecycleBin && recycleBin.length > 0 && (
-                                        <button
-                                            onClick={emptyRecycleBin}
-                                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                        >
-                                            <Icon name="trash-2" size={16} />
-                                            Empty Bin
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className="space-y-4">
-                                    {displayTickets.map(ticket => {
-                                        const dateTime = formatDateTime(ticket.createdAt);
-                                        const isEditing = editingTicket === ticket.id;
-                                        
-                                        return (
-                                            <div key={ticket.id} className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow`}>
-                                                <div className="p-6">
-                                                    {isEditing ? (
-                                                        <div className="space-y-4">
-                                                            <input
-                                                                type="text"
-                                                                value={editForm.client}
-                                                                onChange={(e) => setEditForm({ ...editForm, client: e.target.value })}
-                                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                                                placeholder="Client"
-                                                            />
-                                                            <textarea
-                                                                value={editForm.description}
-                                                                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                                                rows="3"
-                                                            />
-                                                            <select
-                                                                value={editForm.assignedTo}
-                                                                onChange={(e) => setEditForm({ ...editForm, assignedTo: e.target.value })}
-                                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                                            >
-                                                                {staffMembers.map(staff => (
-                                                                    <option key={staff} value={staff}>{staff}</option>
-                                                                ))}
-                                                            </select>
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => saveEdit(ticket.id)}
-                                                                    className={`px-4 py-2 ${currentTheme.primary} text-white rounded-lg`}
-                                                                >
-                                                                    Save
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setEditingTicket(null)}
-                                                                    className={`px-4 py-2 ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200'} rounded-lg`}
-                                                                >
-                                                                    Cancel
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <div className="flex items-start gap-4">
-                                                                {/* Traffic Light Urgency Indicator */}
-                                                                <div className="flex flex-col items-center gap-2">
-                                                                    <div className={`w-10 h-10 rounded-full ${getUrgencyColor(ticket.urgency)} flex items-center justify-center shadow-lg`}>
-                                                                        {ticket.completed && (
-                                                                            <Icon name="check" size={24} className="text-white" />
-                                                                        )}
-                                                                    </div>
-                                                                    <span className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                                        {getUrgencyLabel(ticket.urgency)}
-                                                                    </span>
-                                                                </div>
-                                                                
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{ticket.client}</h3>
-                                                                        {ticket.completed && (
-                                                                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium flex items-center gap-1">
-                                                                                <Icon name="check-circle" size={14} />
-                                                                                Completed
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-sm mb-3`}>{ticket.description}</p>
-                                                                    <div className="grid grid-cols-5 gap-4 text-sm">
-                                                                        <div>
-                                                                            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Date Sent:</span>
-                                                                            <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>
-                                                                                {ticket.dateSent ? new Date(ticket.dateSent).toLocaleDateString() : 'N/A'}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Deadline:</span>
-                                                                            <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>
-                                                                                {ticket.deadline ? new Date(ticket.deadline).toLocaleDateString() : 'N/A'}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Assigned:</span>
-                                                                            <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{ticket.assignedTo}</span>
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>By:</span>
-                                                                            <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{ticket.createdBy}</span>
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Urgency:</span>
-                                                                            <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{getUrgencyLabel(ticket.urgency)}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className={`flex gap-2 mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : ''}`}>
-                                                                {viewRecycleBin ? (
-                                                                    <>
-                                                                        <button
-                                                                            onClick={() => restoreFromBin(ticket.id)}
-                                                                            className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                                                                        >
-                                                                            <Icon name="rotate-ccw" size={14} />
-                                                                            Restore
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => permanentDelete(ticket.id)}
-                                                                            className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm ml-auto hover:bg-red-700"
-                                                                        >
-                                                                            <Icon name="x-circle" size={14} />
-                                                                            Delete Permanently
-                                                                        </button>
-                                                                    </>
-                                                                ) : !viewArchived ? (
-                                                                    <>
-                                                                        <button
-                                                                            onClick={() => startEdit(ticket)}
-                                                                            className={`flex items-center gap-1 px-3 py-2 ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} rounded-lg text-sm`}
-                                                                        >
-                                                                            <Icon name="edit" size={14} />
-                                                                            Edit
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => markComplete(ticket.id)}
-                                                                            className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                                                                        >
-                                                                            <Icon name="check-circle" size={14} />
-                                                                            Complete & Archive
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => deleteTicket(ticket.id)}
-                                                                            className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm ml-auto hover:bg-red-700"
-                                                                        >
-                                                                            <Icon name="trash-2" size={14} />
-                                                                            Delete
-                                                                        </button>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <button
-                                                                            onClick={() => unarchiveTicket(ticket.id)}
-                                                                            className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                                                                        >
-                                                                            <Icon name="archive" size={14} />
-                                                                            Unarchive
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => deleteArchivedTicket(ticket.id)}
-                                                                            className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm ml-auto hover:bg-red-700"
-                                                                        >
-                                                                            <Icon name="trash-2" size={14} />
-                                                                            Delete
-                                                                        </button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        )}
-
-                        {/* INVOICES VIEW */}
-                        {currentView === 'invoices' && (
-                            <>
+                        {view === 'tickets' && (
+                            <div>
                                 <div className="flex justify-between items-center mb-6">
-                                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : ''}`}>Invoices</h2>
+                                    <h2 className="text-2xl font-bold text-gray-800">Tickets</h2>
                                     <button
-                                        onClick={() => setShowNewInvoice(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                        onClick={() => setShowNewTicket(true)}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                                     >
-                                        <Icon name="plus" />
-                                        New Invoice
+                                        + New Ticket
                                     </button>
                                 </div>
                                 
+                                {/* New Ticket Modal */}
+                                {showNewTicket && (
+                                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                                            <h3 className="text-xl font-bold mb-4">New Ticket</h3>
+                                            <div className="space-y-4">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Client Name"
+                                                    value={ticketForm.client}
+                                                    onChange={(e) => setTicketForm({...ticketForm, client: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <textarea
+                                                    placeholder="Description"
+                                                    value={ticketForm.description}
+                                                    onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                    rows="3"
+                                                />
+                                                <select
+                                                    value={ticketForm.urgency}
+                                                    onChange={(e) => setTicketForm({...ticketForm, urgency: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                >
+                                                    <option value="low">Low</option>
+                                                    <option value="medium">Medium</option>
+                                                    <option value="high">High</option>
+                                                </select>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Assigned To (optional)"
+                                                    value={ticketForm.assignedTo}
+                                                    onChange={(e) => setTicketForm({...ticketForm, assignedTo: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleCreateTicket}
+                                                        disabled={loading}
+                                                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                                    >
+                                                        Create
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setShowNewTicket(false)}
+                                                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Tickets List */}
                                 <div className="space-y-4">
-                                    {invoices.map(invoice => (
-                                        <div key={invoice.id} className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                            <div className="flex justify-between items-start mb-4">
+                                    {tickets.map(ticket => (
+                                        <div key={ticket.id} className="bg-white p-6 rounded-lg shadow">
+                                            <div className="flex justify-between items-start">
                                                 <div className="flex-1">
-                                                    <div className="flex items-center gap-3 mb-2">
-                                                        <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{invoice.client}</h3>
-                                                        {invoice.paid && (
-                                                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                                                                ✓ Paid
+                                                    <h3 className="text-lg font-bold text-gray-800">{ticket.client}</h3>
+                                                    <p className="text-gray-600 mt-1">{ticket.description}</p>
+                                                    <div className="flex gap-2 mt-3">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                            ticket.urgency === 'high' ? 'bg-red-100 text-red-800' :
+                                                            ticket.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-green-100 text-green-800'
+                                                        }`}>
+                                                            {ticket.urgency}
+                                                        </span>
+                                                        {ticket.assignedTo && (
+                                                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                {ticket.assignedTo}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>{invoice.jobDescription}</p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <div className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                                        {formatCurrency(invoice.totalCost)}
-                                                    </div>
-                                                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                        {invoice.hours}h @ {formatCurrency(invoice.cost)}/h
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="mt-4 grid grid-cols-4 gap-4 text-sm">
-                                                <div>
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Date:</span>
-                                                    <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.jobDate}</span>
-                                                </div>
-                                                <div>
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Assigned:</span>
-                                                    <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.assignedTo}</span>
-                                                </div>
-                                                <div>
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Charge:</span>
-                                                    <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>
-                                                        {invoice.chargeTiming === 'now' ? 'Now' : 'End of Month'}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>QuickBooks:</span>
-                                                    <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.quickbooks ? 'Yes' : 'No'}</span>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleCompleteTicket(ticket.id)}
+                                                        className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                                                    >
+                                                        Complete
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteTicket(ticket.id)}
+                                                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                                                    >
+                                                        Delete
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div className={`flex gap-2 mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : ''}`}>
+                                        </div>
+                                    ))}
+                                    
+                                    {tickets.length === 0 && !loading && (
+                                        <div className="bg-white p-12 rounded-lg shadow text-center">
+                                            <p className="text-gray-500">No tickets yet. Create your first ticket!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* INVOICES VIEW */}
+                        {view === 'invoices' && (
+                            <div>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800">Invoices</h2>
+                                    <button
+                                        onClick={() => setShowNewInvoice(true)}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                    >
+                                        + New Invoice
+                                    </button>
+                                </div>
+                                
+                                {/* New Invoice Modal */}
+                                {showNewInvoice && (
+                                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                                            <h3 className="text-xl font-bold mb-4">New Invoice</h3>
+                                            <div className="space-y-4">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Client Name"
+                                                    value={invoiceForm.client}
+                                                    onChange={(e) => setInvoiceForm({...invoiceForm, client: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    placeholder="Hours"
+                                                    value={invoiceForm.hours}
+                                                    onChange={(e) => setInvoiceForm({...invoiceForm, hours: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    placeholder="Cost per Hour (£)"
+                                                    value={invoiceForm.cost}
+                                                    onChange={(e) => setInvoiceForm({...invoiceForm, cost: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                />
+                                                <textarea
+                                                    placeholder="Job Description"
+                                                    value={invoiceForm.jobDescription}
+                                                    onChange={(e) => setInvoiceForm({...invoiceForm, jobDescription: e.target.value})}
+                                                    className="w-full px-4 py-2 border rounded-lg"
+                                                    rows="3"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleCreateInvoice}
+                                                        disabled={loading}
+                                                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                                                    >
+                                                        Create
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setShowNewInvoice(false)}
+                                                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Invoices List */}
+                                <div className="space-y-4">
+                                    {invoices.map(invoice => (
+                                        <div key={invoice.id} className="bg-white p-6 rounded-lg shadow">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <h3 className="text-lg font-bold text-gray-800">{invoice.client}</h3>
+                                                    {invoice.jobDescription && (
+                                                        <p className="text-gray-600 mt-1">{invoice.jobDescription}</p>
+                                                    )}
+                                                    <div className="mt-3 text-sm text-gray-600">
+                                                        <p>{invoice.hours} hours × £{invoice.cost}</p>
+                                                        <p className="text-xl font-bold text-gray-800 mt-1">
+                                                            Total: £{invoice.totalCost}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                                 <button
-                                                    onClick={() => toggleInvoicePaid(invoice.id)}
-                                                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm ${
-                                                        invoice.paid 
-                                                            ? darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                            : 'bg-green-600 text-white hover:bg-green-700'
+                                                    onClick={() => handleTogglePaid(invoice.id)}
+                                                    className={`px-4 py-2 rounded-lg font-medium ${
+                                                        invoice.paid
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
                                                     }`}
                                                 >
-                                                    <Icon name="check-circle" size={14} />
-                                                    {invoice.paid ? 'Mark Unpaid' : 'Mark Paid'}
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteInvoice(invoice.id)}
-                                                    className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm ml-auto hover:bg-red-700"
-                                                >
-                                                    <Icon name="trash-2" size={14} />
-                                                    Delete
+                                                    {invoice.paid ? '✓ Paid' : 'Mark Paid'}
                                                 </button>
                                             </div>
                                         </div>
                                     ))}
-                                </div>
-                            </>
-                        )}
-
-                        {/* SETTINGS VIEW */}
-                        {currentView === 'settings' && (
-                            <>
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow mb-6`}>
-                                    <div className="flex border-b">
-                                        <button
-                                            onClick={() => setSettingsTab('account')}
-                                            className={`px-6 py-4 font-medium ${
-                                                settingsTab === 'account' 
-                                                    ? `border-b-2 ${currentTheme.primaryBorder} ${currentTheme.primaryText}` 
-                                                    : darkMode ? 'text-gray-400' : 'text-gray-600'
-                                            }`}
-                                        >
-                                            Account
-                                        </button>
-                                        <button
-                                            onClick={() => setSettingsTab('theme')}
-                                            className={`px-6 py-4 font-medium ${
-                                                settingsTab === 'theme' 
-                                                    ? `border-b-2 ${currentTheme.primaryBorder} ${currentTheme.primaryText}` 
-                                                    : darkMode ? 'text-gray-400' : 'text-gray-600'
-                                            }`}
-                                        >
-                                            Theme
-                                        </button>
-                                        {currentUser.role === 'admin' && (
-                                            <>
-                                                <button
-                                                    onClick={() => setSettingsTab('staff')}
-                                                    className={`px-6 py-4 font-medium ${
-                                                        settingsTab === 'staff' 
-                                                            ? `border-b-2 ${currentTheme.primaryBorder} ${currentTheme.primaryText}` 
-                                                            : darkMode ? 'text-gray-400' : 'text-gray-600'
-                                                    }`}
-                                                >
-                                                    Staff
-                                                </button>
-                                                <button
-                                                    onClick={() => setSettingsTab('workload')}
-                                                    className={`px-6 py-4 font-medium ${
-                                                        settingsTab === 'workload' 
-                                                            ? `border-b-2 ${currentTheme.primaryBorder} ${currentTheme.primaryText}` 
-                                                            : darkMode ? 'text-gray-400' : 'text-gray-600'
-                                                    }`}
-                                                >
-                                                    Workload Chart
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {settingsTab === 'account' && (
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <h2 className={`text-xl font-bold mb-6 ${darkMode ? 'text-white' : ''}`}>Account Settings</h2>
-                                        
-                                        {/* User Info */}
-                                        <div className={`mb-6 p-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-                                            <h3 className={`font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Account Information</h3>
-                                            <div className="space-y-3">
-                                                <div className="flex justify-between items-center">
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Username:</span>
-                                                    <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{currentUser.username}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center">
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Email:</span>
-                                                    <div className="flex items-center gap-2">
-                                                        {isEditingEmail ? (
-                                                            <>
-                                                                <input
-                                                                    type="email"
-                                                                    value={emailEdit}
-                                                                    onChange={(e) => setEmailEdit(e.target.value)}
-                                                                    className={`px-3 py-1 border rounded ${darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-300'}`}
-                                                                    placeholder="your@email.com"
-                                                                />
-                                                                <button
-                                                                    onClick={saveEmail}
-                                                                    className={`px-3 py-1 ${currentTheme.primary} text-white rounded text-sm`}
-                                                                >
-                                                                    Save
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setIsEditingEmail(false)}
-                                                                    className={`px-3 py-1 ${darkMode ? 'bg-gray-600 text-white' : 'bg-gray-200'} rounded text-sm`}
-                                                                >
-                                                                    Cancel
-                                                                </button>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{currentUser.email}</span>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setEmailEdit(currentUser.email);
-                                                                        setIsEditingEmail(true);
-                                                                    }}
-                                                                    className={`text-sm ${currentTheme.primaryText} hover:underline`}
-                                                                >
-                                                                    Edit
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Role:</span>
-                                                    <span className={`font-medium capitalize ${darkMode ? 'text-white' : 'text-gray-900'}`}>{currentUser.role}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Admin User Management */}
-                                        {currentUser.role === 'admin' && (
-                                            <div className={`mb-6 p-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-                                                <h3 className={`font-medium mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Manage Users (Admin Only)</h3>
-                                                <div className="space-y-3">
-                                                    {users.map(user => (
-                                                        <div key={user.id} className={`p-4 ${darkMode ? 'bg-gray-600' : 'bg-white'} rounded-lg border ${darkMode ? 'border-gray-500' : 'border-gray-200'}`}>
-                                                            <div className="flex justify-between items-center mb-3">
-                                                                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{user.username}</span>
-                                                                <span className={`text-xs px-2 py-1 rounded ${user.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                                    {user.role}
-                                                                </span>
-                                                            </div>
-                                                            
-                                                            <div className="space-y-3">
-                                                                {/* Role Change */}
-                                                                <div>
-                                                                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Change Role</label>
-                                                                    <select
-                                                                        value={user.role}
-                                                                        onChange={(e) => adminChangeUserRole(user.id, e.target.value)}
-                                                                        className={`w-full px-3 py-2 text-sm border rounded ${darkMode ? 'bg-gray-700 border-gray-500 text-white' : 'border-gray-300'}`}
-                                                                        disabled={user.id === currentUser.id}
-                                                                    >
-                                                                        <option value="user">User</option>
-                                                                        <option value="admin">Admin</option>
-                                                                    </select>
-                                                                    {user.id === currentUser.id && (
-                                                                        <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>You cannot change your own role</p>
-                                                                    )}
-                                                                </div>
-                                                                
-                                                                {/* Password Reset */}
-                                                                <div>
-                                                                    <label className={`block text-xs mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Reset Password (min 6 characters)</label>
-                                                                    <div className="flex gap-2">
-                                                                        <input
-                                                                            type="password"
-                                                                            value={resetPasswordInputs[user.id] || ''}
-                                                                            onChange={(e) => setResetPasswordInputs(prev => ({ ...prev, [user.id]: e.target.value }))}
-                                                                            placeholder="Enter new password"
-                                                                            className={`flex-1 px-3 py-2 text-sm border rounded ${darkMode ? 'bg-gray-700 border-gray-500 text-white placeholder-gray-400' : 'border-gray-300 placeholder-gray-400'}`}
-                                                                        />
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                if (resetPasswordInputs[user.id]) {
-                                                                                    adminResetUserPassword(user.id, resetPasswordInputs[user.id]);
-                                                                                } else {
-                                                                                    alert('Please enter a new password');
-                                                                                }
-                                                                            }}
-                                                                            className={`px-4 py-2 text-sm ${currentTheme.primary} text-white rounded ${currentTheme.primaryHover}`}
-                                                                        >
-                                                                            Reset
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Change Password */}
-                                        <div className={`p-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-                                            <h3 className={`font-medium mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Change Your Password</h3>
-                                            <div className="space-y-4 max-w-md">
-                                                <div>
-                                                    <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                        Current Password
-                                                    </label>
-                                                    <input
-                                                        type="password"
-                                                        value={passwordChange.current}
-                                                        onChange={(e) => setPasswordChange({ ...passwordChange, current: e.target.value })}
-                                                        className={`w-full px-4 py-2 border rounded-lg ${
-                                                            darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-300'
-                                                        }`}
-                                                        placeholder="Enter current password"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                        New Password
-                                                    </label>
-                                                    <input
-                                                        type="password"
-                                                        value={passwordChange.new}
-                                                        onChange={(e) => setPasswordChange({ ...passwordChange, new: e.target.value })}
-                                                        className={`w-full px-4 py-2 border rounded-lg ${
-                                                            darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-300'
-                                                        }`}
-                                                        placeholder="Enter new password (min 6 characters)"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                        Confirm New Password
-                                                    </label>
-                                                    <input
-                                                        type="password"
-                                                        value={passwordChange.confirm}
-                                                        onChange={(e) => setPasswordChange({ ...passwordChange, confirm: e.target.value })}
-                                                        className={`w-full px-4 py-2 border rounded-lg ${
-                                                            darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-300'
-                                                        }`}
-                                                        placeholder="Confirm new password"
-                                                    />
-                                                </div>
-                                                <button
-                                                    onClick={changePassword}
-                                                    className={`${currentTheme.primary} ${currentTheme.primaryHover} text-white px-6 py-2 rounded-lg font-medium`}
-                                                >
-                                                    Change Password
-                                                </button>
-                                                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                    Password must be at least 6 characters long
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {settingsTab === 'theme' && (
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : ''}`}>Theme Settings</h2>
-                                        
-                                        {/* Dark Mode Toggle */}
-                                        <div className={`mb-6 p-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <h3 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Dark Mode</h3>
-                                                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                        Switch between light and dark themes
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setDarkMode(!darkMode)}
-                                                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition ${
-                                                        darkMode ? 'bg-blue-600' : 'bg-gray-300'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-6 w-6 transform rounded-full bg-white transition ${
-                                                            darkMode ? 'translate-x-7' : 'translate-x-1'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-6`}>Choose your preferred color scheme</p>
-                                        <div className="grid grid-cols-5 gap-4">
-                                            {['blue', 'green', 'purple', 'orange', 'red'].map(t => (
-                                                <button
-                                                    key={t}
-                                                    onClick={() => setTheme(t)}
-                                                    className={`p-4 rounded-lg border-2 ${
-                                                        theme === t ? 'border-gray-800' : darkMode ? 'border-gray-600' : 'border-gray-200'
-                                                    }`}
-                                                >
-                                                    <div className={`w-full h-20 rounded mb-2 ${
-                                                        t === 'blue' ? 'bg-blue-600' :
-                                                        t === 'green' ? 'bg-green-600' :
-                                                        t === 'purple' ? 'bg-purple-600' :
-                                                        t === 'orange' ? 'bg-orange-600' :
-                                                        'bg-red-600'
-                                                    }`}></div>
-                                                    <div className={`text-center capitalize ${darkMode ? 'text-white' : ''}`}>{t}</div>
-                                                    {theme === t && <div className="text-center text-sm text-green-600 mt-1">✓ Selected</div>}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <div className={`mt-6 flex items-center gap-3 p-4 ${darkMode ? 'bg-gray-700' : currentTheme.primaryBg} rounded-lg`}>
-                                            <div className="flex-1">
-                                                <p className={`font-medium ${darkMode ? 'text-white' : currentTheme.primaryText.replace('text-', 'text-')}`}>
-                                                    Current theme: <span className="capitalize">{theme}</span> {darkMode && '(Dark Mode)'}
-                                                </p>
-                                                <p className={`text-sm ${darkMode ? 'text-gray-400' : currentTheme.primaryText.replace('600', '700')}`}>
-                                                    Theme is applied automatically when selected
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={() => alert(`Theme applied!\nColor: ${theme}\nMode: ${darkMode ? 'Dark' : 'Light'}\n\nYour preferences are active across the system.`)}
-                                                className={`px-6 py-3 ${currentTheme.primary} ${currentTheme.primaryHover} text-white rounded-lg font-medium`}
-                                            >
-                                                Apply Theme
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {settingsTab === 'staff' && (
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : ''}`}>Staff Members</h2>
-                                            <button
-                                                onClick={() => setShowAddStaffModal(true)}
-                                                className={`px-4 py-2 ${currentTheme.primary} text-white rounded-lg ${currentTheme.primaryHover}`}
-                                            >
-                                                Add Staff
-                                            </button>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {staffMembers.map((staff, idx) => (
-                                                <div key={idx} className={`flex justify-between items-center p-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-                                                    <span className={`font-medium ${darkMode ? 'text-white' : ''}`}>{staff}</span>
-                                                    <button
-                                                        onClick={() => setStaffMembers(staffMembers.filter(s => s !== staff))}
-                                                        className="text-red-600 text-sm hover:text-red-700"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {settingsTab === 'workload' && (
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
-                                        <h2 className={`text-xl font-bold mb-6 ${darkMode ? 'text-white' : ''}`}>Staff Workload Distribution</h2>
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            <div>
-                                                <canvas id="workloadChart" width="300" height="300"></canvas>
-                                            </div>
-                                            <div>
-                                                <h3 className={`font-bold text-lg mb-4 ${darkMode ? 'text-white' : ''}`}>Ticket Assignment Summary</h3>
-                                                <div className="space-y-3">
-                                                    {(() => {
-                                                        const workloadData = {};
-                                                        tickets.forEach(ticket => {
-                                                            workloadData[ticket.assignedTo] = (workloadData[ticket.assignedTo] || 0) + 1;
-                                                        });
-                                                        
-                                                        return Object.entries(workloadData).map(([staff, count]) => (
-                                                            <div key={staff} className={`flex justify-between items-center p-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-                                                                <span className={`font-medium ${darkMode ? 'text-white' : ''}`}>{staff}</span>
-                                                                <span className={`px-3 py-1 ${darkMode ? 'bg-gray-600 text-blue-300' : 'bg-blue-100 text-blue-700'} rounded-full font-bold`}>
-                                                                    {count} {count === 1 ? 'ticket' : 'tickets'}
-                                                                </span>
-                                                            </div>
-                                                        ));
-                                                    })()}
-                                                    {tickets.length === 0 && (
-                                                        <p className="text-gray-500 text-center py-8">No active tickets to display</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    {/* New Ticket Modal */}
-                    {showNewTicket && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-lg`}>
-                                <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : ''}`}>Create New Ticket</h2>
-                                <div className="space-y-4">
-                                    <input
-                                        type="text"
-                                        placeholder="Client Name"
-                                        value={newTicket.client}
-                                        onChange={(e) => setNewTicket({ ...newTicket, client: e.target.value })}
-                                        className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
-                                    />
-                                    <textarea
-                                        placeholder="Description"
-                                        value={newTicket.description}
-                                        onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
-                                        className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
-                                        rows="4"
-                                    />
                                     
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                Urgency (Traffic Light)
-                                            </label>
-                                            <select
-                                                value={newTicket.urgency}
-                                                onChange={(e) => setNewTicket({ ...newTicket, urgency: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            >
-                                                <option value="low">🟢 Low</option>
-                                                <option value="medium">🟡 Medium</option>
-                                                <option value="high">🔴 High</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                Assigned To
-                                            </label>
-                                            <select
-                                                value={newTicket.assignedTo}
-                                                onChange={(e) => setNewTicket({ ...newTicket, assignedTo: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            >
-                                                <option value="">Select staff...</option>
-                                                {staffMembers.map(staff => (
-                                                    <option key={staff} value={staff}>{staff}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                Date Sent
-                                            </label>
-                                            <input
-                                                type="date"
-                                                value={newTicket.dateSent}
-                                                onChange={(e) => setNewTicket({ ...newTicket, dateSent: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                Deadline
-                                            </label>
-                                            <input
-                                                type="date"
-                                                value={newTicket.deadline}
-                                                onChange={(e) => setNewTicket({ ...newTicket, deadline: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="flex gap-2">
-                                        <button onClick={createTicket} className={`flex-1 ${currentTheme.primary} text-white py-2 rounded-lg ${currentTheme.primaryHover}`}>
-                                            Create
-                                        </button>
-                                        <button onClick={() => setShowNewTicket(false)} className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-2 rounded-lg`}>
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* New Invoice Modal */}
-                    {showNewInvoice && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-                                <h2 className="text-xl font-bold mb-4">Create New Invoice</h2>
-                                <div className="space-y-4">
-                                    <input
-                                        type="text"
-                                        placeholder="Client Name"
-                                        value={newInvoice.client}
-                                        onChange={(e) => setNewInvoice({ ...newInvoice, client: e.target.value })}
-                                        className="w-full px-4 py-2 border rounded-lg"
-                                    />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <input
-                                            type="number"
-                                            placeholder="Hours"
-                                            value={newInvoice.hours}
-                                            onChange={(e) => setNewInvoice({ ...newInvoice, hours: e.target.value })}
-                                            className="w-full px-4 py-2 border rounded-lg"
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder="Cost/Hour"
-                                            value={newInvoice.cost}
-                                            onChange={(e) => setNewInvoice({ ...newInvoice, cost: e.target.value })}
-                                            className="w-full px-4 py-2 border rounded-lg"
-                                        />
-                                    </div>
-                                    <textarea
-                                        placeholder="Job Description"
-                                        value={newInvoice.jobDescription}
-                                        onChange={(e) => setNewInvoice({ ...newInvoice, jobDescription: e.target.value })}
-                                        className="w-full px-4 py-2 border rounded-lg"
-                                        rows="3"
-                                    />
-                                    <input
-                                        type="date"
-                                        value={newInvoice.jobDate}
-                                        onChange={(e) => setNewInvoice({ ...newInvoice, jobDate: e.target.value })}
-                                        className="w-full px-4 py-2 border rounded-lg"
-                                    />
-                                    <select
-                                        value={newInvoice.assignedTo}
-                                        onChange={(e) => setNewInvoice({ ...newInvoice, assignedTo: e.target.value })}
-                                        className="w-full px-4 py-2 border rounded-lg"
-                                    >
-                                        <option value="">Assign to...</option>
-                                        {staffMembers.map(staff => (
-                                            <option key={staff} value={staff}>{staff}</option>
-                                        ))}
-                                    </select>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Charge Timing</label>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setNewInvoice({ ...newInvoice, chargeTiming: 'now' })}
-                                                className={`px-4 py-3 rounded-lg border-2 font-medium transition ${
-                                                    newInvoice.chargeTiming === 'now'
-                                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                        : 'border-gray-300 text-gray-700 hover:border-blue-300'
-                                                }`}
-                                            >
-                                                Charge Now
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setNewInvoice({ ...newInvoice, chargeTiming: 'end-of-month' })}
-                                                className={`px-4 py-3 rounded-lg border-2 font-medium transition ${
-                                                    newInvoice.chargeTiming === 'end-of-month'
-                                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                        : 'border-gray-300 text-gray-700 hover:border-blue-300'
-                                                }`}
-                                            >
-                                                End of Month
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={newInvoice.quickbooks}
-                                            onChange={(e) => setNewInvoice({ ...newInvoice, quickbooks: e.target.checked })}
-                                            className="w-4 h-4"
-                                        />
-                                        <span>Export to QuickBooks</span>
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <button onClick={createInvoice} className="flex-1 bg-blue-600 text-white py-2 rounded-lg">
-                                            Create
-                                        </button>
-                                        <button onClick={() => setShowNewInvoice(false)} className="flex-1 bg-gray-200 py-2 rounded-lg">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Add Staff Modal */}
-                    {showAddStaffModal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md`}>
-                                <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : ''}`}>Add Staff Member</h2>
-                                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
-                                    This will create a staff member AND a login account for them.
-                                </p>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Full Name *</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g., John Smith"
-                                            value={newStaffMember.name}
-                                            onChange={(e) => setNewStaffMember({ ...newStaffMember, name: e.target.value })}
-                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Username *</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g., jsmith"
-                                            value={newStaffMember.username}
-                                            onChange={(e) => setNewStaffMember({ ...newStaffMember, username: e.target.value })}
-                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
-                                        />
-                                        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>They'll use this to login</p>
-                                    </div>
-                                    <div>
-                                        <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Password *</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Create a password"
-                                            value={newStaffMember.password}
-                                            onChange={(e) => setNewStaffMember({ ...newStaffMember, password: e.target.value })}
-                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
-                                        />
-                                        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>They can change this later</p>
-                                    </div>
-                                    <div className={`p-3 ${darkMode ? 'bg-blue-900 border-blue-700' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
-                                        <p className={`text-sm ${darkMode ? 'text-blue-200' : 'text-blue-800'}`}>
-                                            <strong>Note:</strong> After adding, they can login with their username and password. 
-                                            Make sure to share these credentials with them securely.
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2 mt-6">
-                                    <button onClick={addStaffMember} className={`flex-1 ${currentTheme.primary} text-white py-2 rounded-lg ${currentTheme.primaryHover}`}>
-                                        Create Staff & Login
-                                    </button>
-                                    <button onClick={() => setShowAddStaffModal(false)} className={`flex-1 ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} py-2 rounded-lg`}>
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Logo Upload Modal */}
-                    {showLogoUpload && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md`}>
-                                <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : ''}`}>
-                                    {logo ? 'Change Logo' : 'Add Logo'}
-                                </h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                                            Logo URL
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="https://example.com/logo.png"
-                                            value={logo}
-                                            onChange={(e) => setLogo(e.target.value)}
-                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
-                                        />
-                                        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
-                                            Enter the URL of your logo image
-                                        </p>
-                                    </div>
-                                    {logo && (
-                                        <div className="mt-4">
-                                            <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Preview:</p>
-                                            <div className="flex justify-center p-4 border-2 border-dashed rounded-lg">
-                                                <img src={logo} alt="Logo preview" className="h-16" onError={() => alert('Invalid image URL')} />
-                                            </div>
+                                    {invoices.length === 0 && !loading && (
+                                        <div className="bg-white p-12 rounded-lg shadow text-center">
+                                            <p className="text-gray-500">No invoices yet. Create your first invoice!</p>
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex gap-2 mt-6">
-                                    <button 
-                                        onClick={() => setShowLogoUpload(false)} 
-                                        className={`flex-1 ${currentTheme.primary} text-white py-2 rounded-lg ${currentTheme.primaryHover}`}
-                                    >
-                                        Save
-                                    </button>
-                                    {logo && (
-                                        <button 
-                                            onClick={() => { setLogo(''); setShowLogoUpload(false); }} 
-                                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                                        >
-                                            Remove Logo
-                                        </button>
-                                    )}
-                                    <button 
-                                        onClick={() => setShowLogoUpload(false)} 
-                                        className={`flex-1 ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} py-2 rounded-lg`}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </main>
                 </div>
             );
         }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<TicketingSystem />);
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
