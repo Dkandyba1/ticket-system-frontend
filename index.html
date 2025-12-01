@@ -17,41 +17,27 @@
         const { useState, useEffect } = React;
 
         // ============================================================
-        // 🔗 API CONNECTION - LIVE BACKEND
+        // 💾 AUTO-SAVE TO LOCALSTORAGE (Your data is saved!)
         // ============================================================
-        const API_URL = 'https://ticket-system-api-hpxq.onrender.com/api';
+        const useLocalStorage = (key, initialValue) => {
+            const [value, setValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    return initialValue;
+                }
+            });
 
-        // API Helper - Handles all backend calls
-        const apiCall = async (endpoint, method = 'GET', data = null) => {
-            const options = {
-                method,
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' }
-            };
-            
-            if (data) options.body = JSON.stringify(data);
-            
-            try {
-                console.log('🔗 API:', method, endpoint);
-                const response = await fetch(API_URL + endpoint, options);
-                
-                if (response.status === 401) {
-                    console.log('❌ Session expired');
-                    return { error: 'Session expired', needsLogin: true };
+            useEffect(() => {
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
                 }
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
-                }
-                
-                const result = await response.json();
-                console.log('✅ Response:', result);
-                return result;
-            } catch (error) {
-                console.error('❌ API Error:', error);
-                throw error;
-            }
+            }, [key, value]);
+
+            return [value, setValue];
         };
 
         // Icon component that works with Lucide
@@ -66,10 +52,10 @@
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [currentUser, setCurrentUser] = useState(null);
             const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-            const [tickets, setTickets] = useState([]);
-            const [archivedTickets, setArchivedTickets] = useState([]);
-            const [recycleBin, setRecycleBin] = useState([]);
-            const [invoices, setInvoices] = useState([]);
+            const [tickets, setTickets] = useLocalStorage('tickets', []);
+            const [archivedTickets, setArchivedTickets] = useLocalStorage('archivedTickets', []);
+            const [recycleBin, setRecycleBin] = useLocalStorage('recycleBin', []);
+            const [invoices, setInvoices] = useLocalStorage('invoices', []);
             const [showNewTicket, setShowNewTicket] = useState(false);
             const [showNewInvoice, setShowNewInvoice] = useState(false);
             const [newTicket, setNewTicket] = useState({ 
@@ -113,7 +99,7 @@
                 { id: 2, username: 'user', password: 'user123', role: 'user', email: 'user@example.com', active: true }
             ]);
             
-            const [staffMembers, setStaffMembers] = useState([]);
+            const [staffMembers, setStaffMembers] = useLocalStorage('staffMembers', []);
             
             const [showAddStaffModal, setShowAddStaffModal] = useState(false);
             const [newStaffMember, setNewStaffMember] = useState({ name: '', username: '', password: '' });
@@ -203,126 +189,72 @@
                 }
             }, [settingsTab, currentView, tickets]);
 
-            const handleLogin = async () => {
-                if (!loginForm.username || !loginForm.password) {
-                    alert('Please enter username and password');
-                    return;
-                }
-                
-                try {
-                    const data = await apiCall('/auth/login', 'POST', loginForm);
-                    
-                    if (data.needsLogin || data.error) {
-                        alert('Login failed: ' + (data.error || 'Invalid credentials'));
-                        return;
-                    }
-                    
-                    setCurrentUser(data);
+            const handleLogin = () => {
+                const user = users.find(u => u.username === loginForm.username && u.password === loginForm.password);
+                if (user) {
+                    setCurrentUser(user);
                     setIsLoggedIn(true);
-                    setLoginForm({ username: '', password: '' });
-                    
-                    // Load data from API
-                    const [ticketsData, archivedData, deletedData, invoicesData, staffData] = await Promise.all([
-                        apiCall('/tickets').catch(() => []),
-                        apiCall('/tickets?archived=true').catch(() => []),
-                        apiCall('/tickets?deleted=true').catch(() => []),
-                        apiCall('/invoices').catch(() => []),
-                        apiCall('/staff').catch(() => [])
-                    ]);
-                    
-                    setTickets(Array.isArray(ticketsData) ? ticketsData.filter(t => !t.completed && !t.deletedAt) : []);
-                    setArchivedTickets(Array.isArray(archivedData) ? archivedData : []);
-                    setRecycleBin(Array.isArray(deletedData) ? deletedData : []);
-                    setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
-                    setStaffMembers(Array.isArray(staffData) ? staffData.map(s => s.name || s) : []);
-                    
-                } catch (error) {
-                    alert('Login failed: ' + error.message);
+                } else {
+                    alert('Invalid credentials');
                 }
             };
 
-            const handleLogout = async () => {
-                try {
-                    await apiCall('/auth/logout', 'POST');
-                } catch (error) {
-                    console.error('Logout error:', error);
-                }
+            const handleLogout = () => {
                 setIsLoggedIn(false);
                 setCurrentUser(null);
-                setTickets([]);
-                setArchivedTickets([]);
-                setRecycleBin([]);
-                setInvoices([]);
             };
 
-            const createTicket = async () => {
-                if (!newTicket.client || !newTicket.description) {
-                    alert('Please fill in client and description');
+            const createTicket = () => {
+                if (!newTicket.client || !newTicket.description || !newTicket.assignedTo) {
+                    alert('Please fill in all fields');
                     return;
                 }
                 
-                try {
-                    const dateSent = newTicket.dateSent || new Date().toISOString().split('T')[0];
-                    
-                    const created = await apiCall('/tickets', 'POST', {
-                        ...newTicket,
-                        dateSent: dateSent
-                    });
-                    
-                    setTickets([created, ...tickets]);
-                    setNewTicket({ 
-                        client: '', 
-                        description: '', 
-                        priority: 'amber', 
-                        urgency: 'medium',
-                        assignedTo: '',
-                        dateSent: '',
-                        deadline: ''
-                    });
-                    setShowNewTicket(false);
-                } catch (error) {
-                    alert('Failed to create ticket: ' + error.message);
-                }
+                // Set dateSent to today if not provided
+                const dateSent = newTicket.dateSent || new Date().toISOString().split('T')[0];
+                
+                setTickets([{
+                    id: Date.now(),
+                    ...newTicket,
+                    dateSent: dateSent,
+                    createdBy: currentUser.username,
+                    createdAt: new Date().toISOString(),
+                    completed: false
+                }, ...tickets]);
+                setNewTicket({ 
+                    client: '', 
+                    description: '', 
+                    priority: 'amber', 
+                    urgency: 'medium',
+                    assignedTo: '',
+                    dateSent: '',
+                    deadline: ''
+                });
+                setShowNewTicket(false);
             };
 
-            const createInvoice = async () => {
+            const createInvoice = () => {
                 if (!newInvoice.client || !newInvoice.hours || !newInvoice.cost) {
                     alert('Please fill in required fields');
                     return;
                 }
-                
-                try {
-                    const totalCost = parseFloat(newInvoice.hours) * parseFloat(newInvoice.cost);
-                    
-                    const created = await apiCall('/invoices', 'POST', {
-                        ...newInvoice,
-                        hours: parseFloat(newInvoice.hours),
-                        cost: parseFloat(newInvoice.cost),
-                        totalCost
-                    });
-                    
-                    setInvoices([created, ...invoices]);
-                    setNewInvoice({
-                        client: '', hours: '', cost: '', jobDescription: '', 
-                        jobDate: '', assignedTo: '', chargeTiming: 'now', quickbooks: false, paid: false
-                    });
-                    setShowNewInvoice(false);
-                } catch (error) {
-                    alert('Failed to create invoice: ' + error.message);
-                }
+                setInvoices([{
+                    id: Date.now(),
+                    ...newInvoice,
+                    totalCost: parseFloat(newInvoice.hours) * parseFloat(newInvoice.cost),
+                    createdAt: new Date().toISOString()
+                }, ...invoices]);
+                setNewInvoice({
+                    client: '', hours: '', cost: '', jobDescription: '', 
+                    jobDate: '', assignedTo: '', chargeTiming: 'now', quickbooks: false, paid: false
+                });
+                setShowNewInvoice(false);
             };
 
-            const toggleInvoicePaid = async (id) => {
-                try {
-                    const invoice = invoices.find(inv => inv.id === id);
-                    await apiCall(`/invoices/${id}`, 'PATCH', { paid: !invoice.paid });
-                    setInvoices(invoices.map(inv => 
-                        inv.id === id ? { ...inv, paid: !inv.paid } : inv
-                    ));
-                } catch (error) {
-                    alert('Failed to update invoice: ' + error.message);
-                }
-            };
+            const toggleInvoicePaid = (id) => {
+                setInvoices(invoices.map(inv => 
+                    inv.id === id ? { ...inv, paid: !inv.paid } : inv
+                ));
             };
 
             const deleteInvoice = (id) => {
@@ -336,46 +268,28 @@
                 setEditForm({ ...ticket });
             };
 
-            const saveEdit = async (id) => {
-                try {
-                    await apiCall(`/tickets/${id}`, 'PATCH', editForm);
-                    setTickets(tickets.map(t => t.id === id ? { ...t, ...editForm } : t));
-                    setEditingTicket(null);
-                } catch (error) {
-                    alert('Failed to update ticket: ' + error.message);
-                }
+            const saveEdit = (id) => {
+                setTickets(tickets.map(t => t.id === id ? { ...t, ...editForm } : t));
+                setEditingTicket(null);
             };
 
-            const deleteTicket = async (id) => {
+            const deleteTicket = (id) => {
                 if (window.confirm('Move this ticket to Recycle Bin?')) {
-                    try {
-                        await apiCall(`/tickets/${id}?from=active`, 'DELETE');
-                        const ticket = tickets.find(t => t.id === id);
-                        if (ticket) {
-                            setRecycleBin([...recycleBin, { ...ticket, deletedAt: new Date().toISOString(), deletedFrom: 'active' }]);
-                            setTickets(tickets.filter(t => t.id !== id));
-                        }
-                    } catch (error) {
-                        alert('Failed to delete ticket: ' + error.message);
-                    }
-                }
-            };
-
-            const markComplete = async (id) => {
-                try {
-                    await apiCall(`/tickets/${id}`, 'PATCH', {
-                        completed: true,
-                        completedAt: new Date().toISOString(),
-                        archivedAt: new Date().toISOString()
-                    });
                     const ticket = tickets.find(t => t.id === id);
                     if (ticket) {
-                        const completedTicket = { ...ticket, completed: true, completedAt: new Date().toISOString() };
-                        setArchivedTickets([...archivedTickets, { ...completedTicket, archivedAt: new Date().toISOString() }]);
+                        setRecycleBin([...recycleBin, { ...ticket, deletedAt: new Date().toISOString(), deletedFrom: 'active' }]);
                         setTickets(tickets.filter(t => t.id !== id));
                     }
-                } catch (error) {
-                    alert('Failed to complete ticket: ' + error.message);
+                }
+            };
+
+            const markComplete = (id) => {
+                const ticket = tickets.find(t => t.id === id);
+                if (ticket && !ticket.completed) {
+                    // Mark as complete and auto-archive
+                    const completedTicket = { ...ticket, completed: true, completedAt: new Date().toISOString() };
+                    setArchivedTickets([...archivedTickets, { ...completedTicket, archivedAt: new Date().toISOString() }]);
+                    setTickets(tickets.filter(t => t.id !== id));
                 }
             };
 
