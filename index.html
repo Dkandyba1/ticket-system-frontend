@@ -49,8 +49,8 @@
         }
 
         function TicketingSystem() {
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
-            const [currentUser, setCurrentUser] = useState(null);
+            const [isLoggedIn, setIsLoggedIn] = useLocalStorage('isLoggedIn', false);
+            const [currentUser, setCurrentUser] = useLocalStorage('currentUser', null);
             const [loginForm, setLoginForm] = useState({ username: '', password: '' });
             const [tickets, setTickets] = useLocalStorage('tickets', []);
             const [archivedTickets, setArchivedTickets] = useLocalStorage('archivedTickets', []);
@@ -108,12 +108,35 @@
                 lucide.createIcons();
             });
 
+            // ============================================================
+            // 🔄 REAL-TIME UPDATES - Sync data across tabs/windows
+            // ============================================================
             useEffect(() => {
-                if (isLoggedIn) {
-                    // Start with no tickets - ready for client
-                    setTickets([]);
-                }
-            }, [isLoggedIn]);
+                const handleStorageChange = (e) => {
+                    // When another tab/window updates localStorage, sync here
+                    if (e.key === 'tickets') {
+                        setTickets(JSON.parse(e.newValue || '[]'));
+                    } else if (e.key === 'invoices') {
+                        setInvoices(JSON.parse(e.newValue || '[]'));
+                    } else if (e.key === 'archivedTickets') {
+                        setArchivedTickets(JSON.parse(e.newValue || '[]'));
+                    } else if (e.key === 'recycleBin') {
+                        setRecycleBin(JSON.parse(e.newValue || '[]'));
+                    } else if (e.key === 'staffMembers') {
+                        setStaffMembers(JSON.parse(e.newValue || '[]'));
+                    } else if (e.key === 'users') {
+                        setUsers(JSON.parse(e.newValue || '[]'));
+                    }
+                };
+
+                // Listen for storage changes from other tabs/windows
+                window.addEventListener('storage', handleStorageChange);
+
+                // Cleanup listener on unmount
+                return () => {
+                    window.removeEventListener('storage', handleStorageChange);
+                };
+            }, []);
 
             // Create/update workload pie chart
             useEffect(() => {
