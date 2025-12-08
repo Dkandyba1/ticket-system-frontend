@@ -64,8 +64,21 @@
             const [editingInvoice, setEditingInvoice] = useState(null);
             const [invoiceEditForm, setInvoiceEditForm] = useState({});
             const [settingsTab, setSettingsTab] = useState('account');
-            const [theme, setTheme] = useState('blue');
+            const [theme, setTheme] = useState('serenity-blue');
             const [darkMode, setDarkMode] = useState(false);
+            
+            // New mega features states
+            const [invoiceRecycleBin, setInvoiceRecycleBin] = useState([]);
+            const [viewInvoiceRecycleBin, setViewInvoiceRecycleBin] = useState(false);
+            const [showReceipt, setShowReceipt] = useState(null);
+            const [ticketSortBy, setTicketSortBy] = useState('date');
+            const [invoiceGroupBy, setInvoiceGroupBy] = useState('all');
+            const [ticketGroupBy, setTicketGroupBy] = useState('all');
+            const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+            const [showWelcome, setShowWelcome] = useState(true);
+            const [viewMyTickets, setViewMyTickets] = useState(false);
+            const [invoiceFilter, setInvoiceFilter] = useState('all'); // all, paid, unpaid
+            
             const [passwordChange, setPasswordChange] = useState({ current: '', new: '', confirm: '' });
             const [emailEdit, setEmailEdit] = useState('');
             const [isEditingEmail, setIsEditingEmail] = useState(false);
@@ -245,8 +258,27 @@
             };
 
             const deleteInvoice = (id) => {
-                if (window.confirm('Delete this invoice?')) {
-                    setInvoices(invoices.filter(i => i.id !== id));
+                if (window.confirm('Move this invoice to Recycle Bin?')) {
+                    const invoice = invoices.find(i => i.id === id);
+                    if (invoice) {
+                        setInvoiceRecycleBin([...invoiceRecycleBin, { ...invoice, deletedAt: new Date().toISOString() }]);
+                        setInvoices(invoices.filter(i => i.id !== id));
+                    }
+                }
+            };
+
+            const restoreInvoice = (id) => {
+                const invoice = invoiceRecycleBin.find(i => i.id === id);
+                if (invoice) {
+                    const { deletedAt, ...restoredInvoice } = invoice;
+                    setInvoices([...invoices, restoredInvoice]);
+                    setInvoiceRecycleBin(invoiceRecycleBin.filter(i => i.id !== id));
+                }
+            };
+
+            const permanentlyDeleteInvoice = (id) => {
+                if (window.confirm('Permanently delete this invoice? This cannot be undone!')) {
+                    setInvoiceRecycleBin(invoiceRecycleBin.filter(i => i.id !== id));
                 }
             };
 
@@ -492,16 +524,168 @@
                 return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
             };
 
+            // Mega features helper functions
+            
+            // Get overdue tickets
+            const getOverdueTickets = () => {
+                const today = new Date().toISOString().split('T')[0];
+                return tickets.filter(t => t.deadline && t.deadline < today && !t.completed);
+            };
+
+            // Get tickets due today
+            const getTicketsDueToday = () => {
+                const today = new Date().toISOString().split('T')[0];
+                return tickets.filter(t => t.deadline === today && !t.completed);
+            };
+
+            // Get open tickets (not completed, no deadline or future deadline)
+            const getOpenTickets = () => {
+                const today = new Date().toISOString().split('T')[0];
+                return tickets.filter(t => !t.completed && (!t.deadline || t.deadline >= today));
+            };
+
+            // Get tickets near deadline (within 3 days)
+            const getTicketsNearDeadline = () => {
+                const today = new Date();
+                const threeDaysFromNow = new Date(today);
+                threeDaysFromNow.setDate(today.getDate() + 3);
+                const todayStr = today.toISOString().split('T')[0];
+                const threeDaysStr = threeDaysFromNow.toISOString().split('T')[0];
+                
+                return tickets.filter(t => 
+                    t.deadline && 
+                    t.deadline >= todayStr && 
+                    t.deadline <= threeDaysStr && 
+                    !t.completed
+                );
+            };
+
+            // Get monthly revenue
+            const getMonthlyRevenue = (month, year) => {
+                return invoices
+                    .filter(inv => {
+                        if (!inv.jobDate) return false;
+                        const invDate = new Date(inv.jobDate);
+                        return invDate.getMonth() === month && invDate.getFullYear() === year;
+                    })
+                    .reduce((sum, inv) => sum + (inv.totalCost || 0), 0);
+            };
+
+            // Get total revenue for year
+            const getYearlyRevenue = (year) => {
+                return invoices
+                    .filter(inv => {
+                        if (!inv.jobDate) return false;
+                        return new Date(inv.jobDate).getFullYear() === year;
+                    })
+                    .reduce((sum, inv) => sum + (inv.totalCost || 0), 0);
+            };
+
+            // Group invoices by month
+            const groupInvoicesByMonth = () => {
+                const grouped = {};
+                invoices.forEach(inv => {
+                    if (inv.jobDate) {
+                        const date = new Date(inv.jobDate);
+                        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        if (!grouped[monthKey]) {
+                            grouped[monthKey] = [];
+                        }
+                        grouped[monthKey].push(inv);
+                    }
+                });
+                return grouped;
+            };
+
+            // Group tickets by month
+            const groupTicketsByMonth = () => {
+                const grouped = {};
+                tickets.forEach(ticket => {
+                    if (ticket.dateSent) {
+                        const date = new Date(ticket.dateSent);
+                        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        if (!grouped[monthKey]) {
+                            grouped[monthKey] = [];
+                        }
+                        grouped[monthKey].push(ticket);
+                    }
+                });
+                return grouped;
+            };
+
+            // Sort tickets by urgency
+            const sortTicketsByUrgency = (ticketsList) => {
+                const urgencyOrder = { high: 3, medium: 2, low: 1 };
+                return [...ticketsList].sort((a, b) => 
+                    (urgencyOrder[b.urgency] || 0) - (urgencyOrder[a.urgency] || 0)
+                );
+            };
+
+            // Get user's assigned tickets
+            const getMyTickets = () => {
+                return tickets.filter(t => t.assignedTo === currentUser.username);
+            };
+
+            // Get month name
+            const getMonthName = (monthKey) => {
+                const [year, month] = monthKey.split('-');
+                const date = new Date(year, parseInt(month) - 1);
+                return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            };
+
             // Get theme colors based on selected theme
             const getThemeColors = () => {
                 const themes = {
+                    'serenity-blue': {
+                        primary: 'bg-blue-500',
+                        primaryHover: 'hover:bg-blue-600',
+                        primaryText: 'text-blue-600',
+                        primaryBg: 'bg-gradient-to-br from-blue-100 via-cyan-50 to-blue-50',
+                        primaryBorder: 'border-blue-500',
+                        gradient: 'from-blue-400 via-cyan-300 to-blue-200',
+                        headerGradient: 'bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-400',
+                        cardGradient: 'bg-gradient-to-br from-blue-50 to-cyan-50'
+                    },
+                    'forest-dreams': {
+                        primary: 'bg-green-600',
+                        primaryHover: 'hover:bg-green-700',
+                        primaryText: 'text-green-700',
+                        primaryBg: 'bg-gradient-to-br from-green-100 via-emerald-50 to-teal-50',
+                        primaryBorder: 'border-green-600',
+                        gradient: 'from-green-400 via-emerald-300 to-teal-300',
+                        headerGradient: 'bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500',
+                        cardGradient: 'bg-gradient-to-br from-green-50 to-emerald-50'
+                    },
+                    'pastel-paradise': {
+                        primary: 'bg-pink-500',
+                        primaryHover: 'hover:bg-pink-600',
+                        primaryText: 'text-pink-600',
+                        primaryBg: 'bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50',
+                        primaryBorder: 'border-pink-500',
+                        gradient: 'from-pink-300 via-purple-200 to-blue-200',
+                        headerGradient: 'bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400',
+                        cardGradient: 'bg-gradient-to-br from-pink-50 to-purple-50'
+                    },
+                    'midnight-purple': {
+                        primary: 'bg-purple-600',
+                        primaryHover: 'hover:bg-purple-700',
+                        primaryText: 'text-purple-700',
+                        primaryBg: 'bg-gradient-to-br from-purple-100 via-indigo-50 to-violet-50',
+                        primaryBorder: 'border-purple-600',
+                        gradient: 'from-purple-500 via-indigo-400 to-violet-400',
+                        headerGradient: 'bg-gradient-to-r from-purple-600 via-indigo-500 to-violet-500',
+                        cardGradient: 'bg-gradient-to-br from-purple-50 to-indigo-50'
+                    },
+                    // Keep old themes for compatibility
                     blue: {
                         primary: 'bg-blue-600',
                         primaryHover: 'hover:bg-blue-700',
                         primaryText: 'text-blue-600',
                         primaryBg: 'bg-blue-50',
                         primaryBorder: 'border-blue-600',
-                        gradient: 'from-blue-50 to-indigo-100'
+                        gradient: 'from-blue-50 to-indigo-100',
+                        headerGradient: 'bg-blue-600',
+                        cardGradient: 'bg-white'
                     },
                     green: {
                         primary: 'bg-green-600',
@@ -509,7 +693,9 @@
                         primaryText: 'text-green-600',
                         primaryBg: 'bg-green-50',
                         primaryBorder: 'border-green-600',
-                        gradient: 'from-green-50 to-emerald-100'
+                        gradient: 'from-green-50 to-emerald-100',
+                        headerGradient: 'bg-green-600',
+                        cardGradient: 'bg-white'
                     },
                     purple: {
                         primary: 'bg-purple-600',
@@ -517,7 +703,9 @@
                         primaryText: 'text-purple-600',
                         primaryBg: 'bg-purple-50',
                         primaryBorder: 'border-purple-600',
-                        gradient: 'from-purple-50 to-violet-100'
+                        gradient: 'from-purple-50 to-violet-100',
+                        headerGradient: 'bg-purple-600',
+                        cardGradient: 'bg-white'
                     },
                     orange: {
                         primary: 'bg-orange-600',
@@ -525,18 +713,12 @@
                         primaryText: 'text-orange-600',
                         primaryBg: 'bg-orange-50',
                         primaryBorder: 'border-orange-600',
-                        gradient: 'from-orange-50 to-amber-100'
-                    },
-                    red: {
-                        primary: 'bg-red-600',
-                        primaryHover: 'hover:bg-red-700',
-                        primaryText: 'text-red-600',
-                        primaryBg: 'bg-red-50',
-                        primaryBorder: 'border-red-600',
-                        gradient: 'from-red-50 to-rose-100'
+                        gradient: 'from-orange-50 to-amber-100',
+                        headerGradient: 'bg-orange-600',
+                        cardGradient: 'bg-white'
                     }
                 };
-                return themes[theme] || themes.blue;
+                return themes[theme] || themes['serenity-blue'];
             };
 
             const currentTheme = getThemeColors();
@@ -585,96 +767,287 @@
                 );
             }
 
+            // WELCOME SCREEN
+            if (showWelcome) {
+                const overdueCount = getOverdueTickets().length;
+                const dueTodayCount = getTicketsDueToday().length;
+                const myTicketsCount = getMyTickets().length;
+                const nearDeadlineCount = getTicketsNearDeadline().length;
+
+                return (
+                    <div className={`min-h-screen bg-gradient-to-br ${darkMode ? 'from-gray-900 via-gray-800 to-gray-900' : currentTheme.gradient} flex items-center justify-center p-4`}>
+                        <div className={`${darkMode ? 'bg-gray-800/95 border border-gray-700' : 'bg-white/95'} backdrop-blur-sm rounded-2xl shadow-2xl p-8 md:p-12 w-full max-w-4xl`}>
+                            <div className="text-center mb-8">
+                                <div className="inline-block p-4 rounded-full bg-gradient-to-br ${currentTheme.gradient} mb-4">
+                                    <Icon name="sparkles" size={48} className="text-white" />
+                                </div>
+                                <h1 className={`text-4xl md:text-5xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-3`}>
+                                    Welcome back, {currentUser.username}! 👋
+                                </h1>
+                                <p className={`text-lg ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    Here's what's happening today
+                                </p>
+                            </div>
+
+                            {/* Quick Stats Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                                <div className={`${darkMode ? 'bg-gray-700/50' : currentTheme.cardGradient} rounded-xl p-6 text-center border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                                    <div className="text-3xl font-bold text-blue-600 mb-2">{myTicketsCount}</div>
+                                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>My Tickets</div>
+                                </div>
+                                <div className={`${darkMode ? 'bg-gray-700/50' : currentTheme.cardGradient} rounded-xl p-6 text-center border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                                    <div className="text-3xl font-bold text-yellow-600 mb-2">{dueTodayCount}</div>
+                                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Due Today</div>
+                                </div>
+                                <div className={`${darkMode ? 'bg-gray-700/50' : currentTheme.cardGradient} rounded-xl p-6 text-center border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                                    <div className="text-3xl font-bold text-red-600 mb-2">{overdueCount}</div>
+                                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Overdue</div>
+                                </div>
+                                <div className={`${darkMode ? 'bg-gray-700/50' : currentTheme.cardGradient} rounded-xl p-6 text-center border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                                    <div className="text-3xl font-bold text-orange-600 mb-2">{nearDeadlineCount}</div>
+                                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Upcoming</div>
+                                </div>
+                            </div>
+
+                            {/* Quick Actions */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                                <button
+                                    onClick={() => { setShowWelcome(false); setCurrentView('tickets'); setViewMyTickets(true); }}
+                                    className={`${currentTheme.primary} ${currentTheme.primaryHover} text-white p-6 rounded-xl flex flex-col items-center gap-3 hover:scale-105 transition-transform shadow-lg`}
+                                >
+                                    <Icon name="clipboard-list" size={32} />
+                                    <span className="font-semibold text-lg">My Tickets</span>
+                                    <span className="text-sm opacity-90">{myTicketsCount} assigned to you</span>
+                                </button>
+                                <button
+                                    onClick={() => { setShowWelcome(false); setCurrentView('dashboard'); }}
+                                    className={`${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300'} ${darkMode ? 'text-white' : 'text-gray-800'} p-6 rounded-xl flex flex-col items-center gap-3 hover:scale-105 transition-transform shadow-lg`}
+                                >
+                                    <Icon name="layout-dashboard" size={32} />
+                                    <span className="font-semibold text-lg">Dashboard</span>
+                                    <span className="text-sm opacity-75">View analytics</span>
+                                </button>
+                                <button
+                                    onClick={() => { setShowWelcome(false); setCurrentView('tickets'); setShowNewTicket(true); }}
+                                    className={`${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300'} ${darkMode ? 'text-white' : 'text-gray-800'} p-6 rounded-xl flex flex-col items-center gap-3 hover:scale-105 transition-transform shadow-lg`}
+                                >
+                                    <Icon name="plus-circle" size={32} />
+                                    <span className="font-semibold text-lg">New Ticket</span>
+                                    <span className="text-sm opacity-75">Create ticket</span>
+                                </button>
+                            </div>
+
+                            {/* Alerts */}
+                            {(overdueCount > 0 || nearDeadlineCount > 0) && (
+                                <div className={`${darkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-200'} border rounded-xl p-4 mb-6`}>
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="alert-circle" size={24} className="text-red-600" />
+                                        <div>
+                                            <div className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-800'}`}>Attention Needed!</div>
+                                            <div className={`text-sm ${darkMode ? 'text-red-300' : 'text-red-700'}`}>
+                                                {overdueCount > 0 && `${overdueCount} ticket${overdueCount > 1 ? 's' : ''} overdue. `}
+                                                {nearDeadlineCount > 0 && `${nearDeadlineCount} ticket${nearDeadlineCount > 1 ? 's' : ''} due soon.`}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => setShowWelcome(false)}
+                                className={`w-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'} py-3 rounded-xl font-medium transition-colors`}
+                            >
+                                Continue to Dashboard →
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
             const displayTickets = viewRecycleBin ? recycleBin : (viewArchived ? archivedTickets : tickets);
 
             // MAIN APP
             return (
                 <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
                     {/* Header */}
-                    <header className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-sm border-b`}>
-                        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                    <header className={`${darkMode ? 'bg-gray-800 border-gray-700' : currentTheme.headerGradient} shadow-lg border-b`}>
+                        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
-                                <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Support System</h1>
+                                <h1 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-white'}`}>Support System</h1>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 md:gap-4">
+                                {/* Notification Bell */}
+                                <div className="relative">
+                                    <button
+                                        className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-white/20 text-white hover:bg-white/30'} relative`}
+                                        title="Notifications"
+                                    >
+                                        <Icon name="bell" size={20} />
+                                        {getTicketsNearDeadline().length > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                                {getTicketsNearDeadline().length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+                                
+                                {/* Dark Mode Toggle */}
                                 <button
                                     onClick={() => setDarkMode(!darkMode)}
-                                    className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 text-yellow-400' : 'bg-gray-100 text-gray-600'}`}
+                                    className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 text-yellow-400' : 'bg-white/20 text-white hover:bg-white/30'}`}
                                     title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                                 >
                                     <Icon name={darkMode ? 'sun' : 'moon'} size={20} />
                                 </button>
+                                
+                                {/* Welcome Button */}
+                                <button
+                                    onClick={() => setShowWelcome(true)}
+                                    className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white/20 hover:bg-white/30'} text-white`}
+                                >
+                                    <Icon name="home" size={18} />
+                                    <span className="text-sm">Welcome</span>
+                                </button>
+                                
+                                {/* User Info */}
                                 <div className="flex items-center gap-2">
-                                    <Icon name="user" size={20} />
-                                    <span className={`font-medium ${darkMode ? 'text-white' : ''}`}>{currentUser.username}</span>
-                                    <span className={`text-xs ${currentTheme.primary} text-white px-2 py-1 rounded`}>{currentUser.role}</span>
+                                    <Icon name="user" size={18} className={darkMode ? 'text-white' : 'text-white'} />
+                                    <span className={`font-medium hidden md:inline ${darkMode ? 'text-white' : 'text-white'}`}>{currentUser.username}</span>
+                                    <span className={`text-xs ${darkMode ? 'bg-gray-700' : 'bg-white/30'} text-white px-2 py-1 rounded`}>{currentUser.role}</span>
                                 </div>
-                                <button onClick={handleLogout} className={`flex items-center gap-2 px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-700'} rounded-lg`}>
-                                    <Icon name="log-out" />
-                                    Logout
+                                
+                                {/* Logout */}
+                                <button onClick={handleLogout} className={`flex items-center gap-2 px-3 md:px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'bg-white/20 hover:bg-white/30 text-white'} rounded-lg`}>
+                                    <Icon name="log-out" size={18} />
+                                    <span className="hidden md:inline">Logout</span>
                                 </button>
                             </div>
                         </div>
                     </header>
 
-                    <div className="max-w-7xl mx-auto px-4 py-8">
+                    <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
                         {/* Navigation */}
-                        <div className="flex gap-2 mb-6">
+                        <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-2">
                             <button
                                 onClick={() => setCurrentView('dashboard')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
+                                className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
                                     currentView === 'dashboard' 
                                         ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
+                                        : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 <Icon name="layout-dashboard" />
                                 Dashboard
                             </button>
                             <button
-                                onClick={() => setCurrentView('tickets')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                                    currentView === 'tickets' 
+                                onClick={() => { setCurrentView('tickets'); setViewMyTickets(false); setViewArchived(false); setViewRecycleBin(false); }}
+                                className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
+                                    currentView === 'tickets' && !viewMyTickets
                                         ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
+                                        : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 <Icon name="file-text" />
-                                Tickets
+                                <span>Tickets</span>
                             </button>
                             <button
-                                onClick={() => setCurrentView('invoices')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
+                                onClick={() => { setCurrentView('tickets'); setViewMyTickets(true); setViewArchived(false); setViewRecycleBin(false); }}
+                                className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
+                                    viewMyTickets 
+                                        ? `${currentTheme.primary} text-white` 
+                                        : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-50'
+                                }`}
+                            >
+                                <Icon name="user-check" />
+                                <span>My Tickets</span>
+                                {getMyTickets().length > 0 && (
+                                    <span className="bg-white text-gray-800 text-xs px-2 py-0.5 rounded-full font-bold">
+                                        {getMyTickets().length}
+                                    </span>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => { setCurrentView('invoices'); setViewInvoiceRecycleBin(false); }}
+                                className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
                                     currentView === 'invoices' 
                                         ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
+                                        : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 <Icon name="dollar-sign" />
-                                Invoices ({invoices.length})
+                                <span className="hidden sm:inline">Invoices</span>
+                                <span className="sm:hidden">$</span>
+                                <span className="text-xs">({invoices.length})</span>
                             </button>
                             <button
                                 onClick={() => setCurrentView('settings')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
+                                className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
                                     currentView === 'settings' 
                                         ? `${currentTheme.primary} text-white` 
-                                        : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
+                                        : darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 <Icon name="settings" />
-                                Settings
+                                <span className="hidden sm:inline">Settings</span>
                             </button>
                         </div>
 
                         {/* DASHBOARD VIEW */}
                         {currentView === 'dashboard' && (
                             <>
-                                <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Dashboard Overview</h2>
+                                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                                    <h2 className={`text-2xl md:text-3xl font-bold bg-gradient-to-r ${currentTheme.gradient} bg-clip-text text-transparent`}>
+                                        Dashboard Overview
+                                    </h2>
+                                    <select
+                                        value={selectedYear}
+                                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                        className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300'}`}
+                                    >
+                                        {[...Array(5)].map((_, i) => {
+                                            const year = new Date().getFullYear() - i;
+                                            return <option key={year} value={year}>{year} Performance</option>;
+                                        })}
+                                    </select>
+                                </div>
                                 
-                                {/* Stats Cards */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                {/* Enhanced Stats Cards with Ticket Summary */}
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                                    {/* Overdue Tickets */}
+                                    <div className={`${darkMode ? 'bg-gradient-to-br from-red-900/50 to-red-800/30 border border-red-700' : 'bg-gradient-to-br from-red-50 to-red-100 border border-red-200'} rounded-xl shadow-lg p-6`}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Icon name="alert-circle" className="text-red-600" size={24} />
+                                            <span className={`text-3xl font-bold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                                {getOverdueTickets().length}
+                                            </span>
+                                        </div>
+                                        <p className={`text-sm font-medium ${darkMode ? 'text-red-300' : 'text-red-700'}`}>Overdue</p>
+                                    </div>
+                                    
+                                    {/* Due Today */}
+                                    <div className={`${darkMode ? 'bg-gradient-to-br from-yellow-900/50 to-yellow-800/30 border border-yellow-700' : 'bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200'} rounded-xl shadow-lg p-6`}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Icon name="clock" className="text-yellow-600" size={24} />
+                                            <span className={`text-3xl font-bold ${darkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                                                {getTicketsDueToday().length}
+                                            </span>
+                                        </div>
+                                        <p className={`text-sm font-medium ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>Due Today</p>
+                                    </div>
+                                    
+                                    {/* Open Tickets */}
+                                    <div className={`${darkMode ? 'bg-gradient-to-br from-green-900/50 to-green-800/30 border border-green-700' : 'bg-gradient-to-br from-green-50 to-green-100 border border-green-200'} rounded-xl shadow-lg p-6`}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Icon name="check-circle" className="text-green-600" size={24} />
+                                            <span className={`text-3xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                                {getOpenTickets().length}
+                                            </span>
+                                        </div>
+                                        <p className={`text-sm font-medium ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Open</p>
+                                    </div>
+                                
                                     {/* Active Tickets Card */}
-                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
+                                    <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : currentTheme.cardGradient + ' border border-gray-200'} rounded-xl shadow-lg p-6`}>
                                         <div className="flex items-center justify-between mb-2">
                                             <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Active Tickets</h3>
                                             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
