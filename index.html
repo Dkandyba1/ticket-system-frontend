@@ -61,6 +61,8 @@
             const [viewRecycleBin, setViewRecycleBin] = useState(false);
             const [editingTicket, setEditingTicket] = useState(null);
             const [editForm, setEditForm] = useState({});
+            const [editingInvoice, setEditingInvoice] = useState(null);
+            const [invoiceEditForm, setInvoiceEditForm] = useState({});
             const [settingsTab, setSettingsTab] = useState('account');
             const [theme, setTheme] = useState('blue');
             const [darkMode, setDarkMode] = useState(false);
@@ -246,6 +248,21 @@
                 if (window.confirm('Delete this invoice?')) {
                     setInvoices(invoices.filter(i => i.id !== id));
                 }
+            };
+
+            const startEditInvoice = (invoice) => {
+                setEditingInvoice(invoice.id);
+                setInvoiceEditForm({ ...invoice });
+            };
+
+            const saveInvoiceEdit = (id) => {
+                // Recalculate total cost if hours or cost changed
+                const updatedInvoice = {
+                    ...invoiceEditForm,
+                    totalCost: parseFloat(invoiceEditForm.hours) * parseFloat(invoiceEditForm.cost)
+                };
+                setInvoices(invoices.map(inv => inv.id === id ? updatedInvoice : inv));
+                setEditingInvoice(null);
             };
 
             const startEdit = (ticket) => {
@@ -1276,77 +1293,171 @@
                                 </div>
                                 
                                 <div className="space-y-4">
-                                    {invoices.map(invoice => (
-                                        <div key={invoice.id} className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-3 mb-2">
-                                                        <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{invoice.client}</h3>
-                                                        {invoice.paid && (
-                                                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                                                                ✓ Paid
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {(invoice.clientEmail || invoice.clientPhone) && (
-                                                        <div className={`flex gap-4 mb-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                            {invoice.clientEmail && <span>📧 {invoice.clientEmail}</span>}
-                                                            {invoice.clientPhone && <span>📞 {invoice.clientPhone}</span>}
+                                    {invoices.map(invoice => {
+                                        const isEditingInvoice = editingInvoice === invoice.id;
+                                        
+                                        return (
+                                            <div key={invoice.id} className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg shadow p-6`}>
+                                                {isEditingInvoice ? (
+                                                    <div className="space-y-4">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Client Name"
+                                                            value={invoiceEditForm.client}
+                                                            onChange={(e) => setInvoiceEditForm({ ...invoiceEditForm, client: e.target.value })}
+                                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                        />
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <input
+                                                                type="email"
+                                                                placeholder="Client Email (optional)"
+                                                                value={invoiceEditForm.clientEmail || ''}
+                                                                onChange={(e) => setInvoiceEditForm({ ...invoiceEditForm, clientEmail: e.target.value })}
+                                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                            />
+                                                            <input
+                                                                type="tel"
+                                                                placeholder="Client Phone (optional)"
+                                                                value={invoiceEditForm.clientPhone || ''}
+                                                                onChange={(e) => setInvoiceEditForm({ ...invoiceEditForm, clientPhone: e.target.value })}
+                                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                            />
                                                         </div>
-                                                    )}
-                                                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>{invoice.jobDescription}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                                        {formatCurrency(invoice.totalCost)}
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Hours"
+                                                                value={invoiceEditForm.hours}
+                                                                onChange={(e) => setInvoiceEditForm({ ...invoiceEditForm, hours: e.target.value })}
+                                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                            />
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Cost/Hour"
+                                                                value={invoiceEditForm.cost}
+                                                                onChange={(e) => setInvoiceEditForm({ ...invoiceEditForm, cost: e.target.value })}
+                                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                            />
+                                                        </div>
+                                                        <textarea
+                                                            placeholder="Job Description"
+                                                            value={invoiceEditForm.jobDescription || ''}
+                                                            onChange={(e) => setInvoiceEditForm({ ...invoiceEditForm, jobDescription: e.target.value })}
+                                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                            rows="3"
+                                                        />
+                                                        <input
+                                                            type="date"
+                                                            value={invoiceEditForm.jobDate || ''}
+                                                            onChange={(e) => setInvoiceEditForm({ ...invoiceEditForm, jobDate: e.target.value })}
+                                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                        />
+                                                        <select
+                                                            value={invoiceEditForm.assignedTo || ''}
+                                                            onChange={(e) => setInvoiceEditForm({ ...invoiceEditForm, assignedTo: e.target.value })}
+                                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                        >
+                                                            <option value="">Assign to...</option>
+                                                            {staffMembers.map(staff => (
+                                                                <option key={staff} value={staff}>{staff}</option>
+                                                            ))}
+                                                        </select>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => saveInvoiceEdit(invoice.id)}
+                                                                className={`px-4 py-2 ${currentTheme.primary} text-white rounded-lg`}
+                                                            >
+                                                                Save
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setEditingInvoice(null)}
+                                                                className={`px-4 py-2 ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200'} rounded-lg`}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                        {invoice.hours}h @ {formatCurrency(invoice.cost)}/h
-                                                    </div>
-                                                </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="flex justify-between items-start mb-4">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-3 mb-2">
+                                                                    <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{invoice.client}</h3>
+                                                                    {invoice.paid && (
+                                                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                                                            ✓ Paid
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {(invoice.clientEmail || invoice.clientPhone) && (
+                                                                    <div className={`flex gap-4 mb-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                                        {invoice.clientEmail && <span>📧 {invoice.clientEmail}</span>}
+                                                                        {invoice.clientPhone && <span>📞 {invoice.clientPhone}</span>}
+                                                                    </div>
+                                                                )}
+                                                                <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>{invoice.jobDescription}</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                                                    {formatCurrency(invoice.totalCost)}
+                                                                </div>
+                                                                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                    {invoice.hours}h @ {formatCurrency(invoice.cost)}/h
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-4 grid grid-cols-4 gap-4 text-sm">
+                                                            <div>
+                                                                <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Date:</span>
+                                                                <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.jobDate}</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Assigned:</span>
+                                                                <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.assignedTo}</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Charge:</span>
+                                                                <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>
+                                                                    {invoice.chargeTiming === 'now' ? 'Now' : 'End of Month'}
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>QuickBooks:</span>
+                                                                <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.quickbooks ? 'Yes' : 'No'}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className={`flex gap-2 mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : ''}`}>
+                                                            <button
+                                                                onClick={() => startEditInvoice(invoice)}
+                                                                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                                                            >
+                                                                <Icon name="edit" size={14} />
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => toggleInvoicePaid(invoice.id)}
+                                                                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm ${
+                                                                    invoice.paid 
+                                                                        ? darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                        : 'bg-green-600 text-white hover:bg-green-700'
+                                                                }`}
+                                                            >
+                                                                <Icon name="check-circle" size={14} />
+                                                                {invoice.paid ? 'Mark Unpaid' : 'Mark Paid'}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteInvoice(invoice.id)}
+                                                                className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm ml-auto hover:bg-red-700"
+                                                            >
+                                                                <Icon name="trash-2" size={14} />
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
-                                            <div className="mt-4 grid grid-cols-4 gap-4 text-sm">
-                                                <div>
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Date:</span>
-                                                    <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.jobDate}</span>
-                                                </div>
-                                                <div>
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Assigned:</span>
-                                                    <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.assignedTo}</span>
-                                                </div>
-                                                <div>
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Charge:</span>
-                                                    <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>
-                                                        {invoice.chargeTiming === 'now' ? 'Now' : 'End of Month'}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>QuickBooks:</span>
-                                                    <span className={`font-medium ml-2 ${darkMode ? 'text-gray-200' : ''}`}>{invoice.quickbooks ? 'Yes' : 'No'}</span>
-                                                </div>
-                                            </div>
-                                            <div className={`flex gap-2 mt-4 pt-4 border-t ${darkMode ? 'border-gray-700' : ''}`}>
-                                                <button
-                                                    onClick={() => toggleInvoicePaid(invoice.id)}
-                                                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm ${
-                                                        invoice.paid 
-                                                            ? darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                            : 'bg-green-600 text-white hover:bg-green-700'
-                                                    }`}
-                                                >
-                                                    <Icon name="check-circle" size={14} />
-                                                    {invoice.paid ? 'Mark Unpaid' : 'Mark Paid'}
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteInvoice(invoice.id)}
-                                                    className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm ml-auto hover:bg-red-700"
-                                                >
-                                                    <Icon name="trash-2" size={14} />
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </>
                         )}
