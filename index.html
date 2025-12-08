@@ -64,8 +64,6 @@
             const [settingsTab, setSettingsTab] = useState('account');
             const [theme, setTheme] = useState('blue');
             const [darkMode, setDarkMode] = useState(false);
-            const [logo, setLogo] = useState('');
-            const [showLogoUpload, setShowLogoUpload] = useState(false);
             const [passwordChange, setPasswordChange] = useState({ current: '', new: '', confirm: '' });
             const [emailEdit, setEmailEdit] = useState('');
             const [isEditingEmail, setIsEditingEmail] = useState(false);
@@ -579,26 +577,6 @@
                     <header className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-sm border-b`}>
                         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                {logo ? (
-                                    <img 
-                                        src={logo} 
-                                        alt="Logo" 
-                                        className="h-10 cursor-pointer hover:opacity-80"
-                                        onClick={() => setShowLogoUpload(true)}
-                                        title="Click to change logo"
-                                    />
-                                ) : (
-                                    <button
-                                        onClick={() => setShowLogoUpload(true)}
-                                        className={`flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-dashed ${
-                                            darkMode ? 'border-gray-600 text-gray-400 hover:border-gray-500' : 'border-gray-300 text-gray-500 hover:border-gray-400'
-                                        }`}
-                                        title="Add logo"
-                                    >
-                                        <Icon name="image" size={20} />
-                                        <span className="text-sm">Add Logo</span>
-                                    </button>
-                                )}
                                 <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Support System</h1>
                             </div>
                             <div className="flex items-center gap-4">
@@ -1086,16 +1064,63 @@
                                                                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                                                                 className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
                                                                 rows="3"
+                                                                placeholder="Description"
                                                             />
-                                                            <select
-                                                                value={editForm.assignedTo}
-                                                                onChange={(e) => setEditForm({ ...editForm, assignedTo: e.target.value })}
-                                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                                            >
-                                                                {staffMembers.map(staff => (
-                                                                    <option key={staff} value={staff}>{staff}</option>
-                                                                ))}
-                                                            </select>
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                        Priority
+                                                                    </label>
+                                                                    <select
+                                                                        value={editForm.priority || 'amber'}
+                                                                        onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
+                                                                        className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                                    >
+                                                                        <option value="red">🔴 Red</option>
+                                                                        <option value="amber">🟠 Amber</option>
+                                                                        <option value="green">🟢 Green</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div>
+                                                                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                        Urgency
+                                                                    </label>
+                                                                    <select
+                                                                        value={editForm.urgency || 'medium'}
+                                                                        onChange={(e) => setEditForm({ ...editForm, urgency: e.target.value })}
+                                                                        className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                                    >
+                                                                        <option value="high">🔴 High</option>
+                                                                        <option value="medium">🟡 Medium</option>
+                                                                        <option value="low">🟢 Low</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                    Deadline
+                                                                </label>
+                                                                <input
+                                                                    type="date"
+                                                                    value={editForm.deadline || ''}
+                                                                    onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })}
+                                                                    className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                    Assigned To
+                                                                </label>
+                                                                <select
+                                                                    value={editForm.assignedTo}
+                                                                    onChange={(e) => setEditForm({ ...editForm, assignedTo: e.target.value })}
+                                                                    className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
+                                                                >
+                                                                    {staffMembers.map(staff => (
+                                                                        <option key={staff} value={staff}>{staff}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
                                                             <div className="flex gap-2">
                                                                 <button
                                                                     onClick={() => saveEdit(ticket.id)}
@@ -1265,12 +1290,8 @@
                                                     </div>
                                                     {(invoice.clientEmail || invoice.clientPhone) && (
                                                         <div className={`flex gap-4 mb-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                            {invoice.clientEmail && (
-                                                                <span>📧 {invoice.clientEmail}</span>
-                                                            )}
-                                                            {invoice.clientPhone && (
-                                                                <span>📞 {invoice.clientPhone}</span>
-                                                            )}
+                                                            {invoice.clientEmail && <span>📧 {invoice.clientEmail}</span>}
+                                                            {invoice.clientPhone && <span>📞 {invoice.clientPhone}</span>}
                                                         </div>
                                                     )}
                                                     <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-sm`}>{invoice.jobDescription}</p>
@@ -1806,14 +1827,14 @@
                                     <div className="grid grid-cols-2 gap-4">
                                         <input
                                             type="email"
-                                            placeholder="Client Email"
+                                            placeholder="Client Email (optional)"
                                             value={newInvoice.clientEmail}
                                             onChange={(e) => setNewInvoice({ ...newInvoice, clientEmail: e.target.value })}
                                             className="w-full px-4 py-2 border rounded-lg"
                                         />
                                         <input
                                             type="tel"
-                                            placeholder="Client Phone"
+                                            placeholder="Client Phone (optional)"
                                             value={newInvoice.clientPhone}
                                             onChange={(e) => setNewInvoice({ ...newInvoice, clientPhone: e.target.value })}
                                             className="w-full px-4 py-2 border rounded-lg"
@@ -1968,62 +1989,6 @@
                     )}
 
                     {/* Logo Upload Modal */}
-                    {showLogoUpload && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md`}>
-                                <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : ''}`}>
-                                    {logo ? 'Change Logo' : 'Add Logo'}
-                                </h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                                            Logo URL
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="https://example.com/logo.png"
-                                            value={logo}
-                                            onChange={(e) => setLogo(e.target.value)}
-                                            className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
-                                        />
-                                        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
-                                            Enter the URL of your logo image
-                                        </p>
-                                    </div>
-                                    {logo && (
-                                        <div className="mt-4">
-                                            <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Preview:</p>
-                                            <div className="flex justify-center p-4 border-2 border-dashed rounded-lg">
-                                                <img src={logo} alt="Logo preview" className="h-16" onError={() => alert('Invalid image URL')} />
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="flex gap-2 mt-6">
-                                    <button 
-                                        onClick={() => setShowLogoUpload(false)} 
-                                        className={`flex-1 ${currentTheme.primary} text-white py-2 rounded-lg ${currentTheme.primaryHover}`}
-                                    >
-                                        Save
-                                    </button>
-                                    {logo && (
-                                        <button 
-                                            onClick={() => { setLogo(''); setShowLogoUpload(false); }} 
-                                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                                        >
-                                            Remove Logo
-                                        </button>
-                                    )}
-                                    <button 
-                                        onClick={() => setShowLogoUpload(false)} 
-                                        className={`flex-1 ${darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} py-2 rounded-lg`}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         }
