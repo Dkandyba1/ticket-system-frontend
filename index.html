@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Genius IT - Complete Enhanced System</title>
+    <title>Genius IT - Professional Ticketing System</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -16,15 +16,13 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // Icon Component
         const Icon = ({ name, size = 24, className = "" }) => {
             const icons = {
-                'zap': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
                 'layout-dashboard': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
-                'ticket': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 7v2a3 3 0 1 1 0 6v2c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>,
-                'file-text': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>,
+                'ticket': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 7v2a3 3 0 1 1 0 6v2c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"></path></svg>,
+                'file-text': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>,
                 'settings': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m5.2-13.2l-1 1m-2.4 2.4l-4 4M23 12h-6m-6 0H1m18.2 5.2l-1-1m-2.4-2.4l-4-4"></path></svg>,
-                'sun': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>,
+                'sun': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg>,
                 'moon': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
                 'log-out': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
                 'plus': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
@@ -38,326 +36,136 @@
                 'user-plus': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>,
                 'user-x': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>,
                 'shield': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
+                'alert-circle': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>,
+                'map-pin': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>,
+                'edit': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>,
+                'trending-up': <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>,
             };
             return icons[name] || null;
         };
 
-        // Pie Chart Component
         const PieChart = ({ data, darkMode }) => {
             const canvasRef = useRef(null);
             const chartRef = useRef(null);
 
             useEffect(() => {
                 if (canvasRef.current && data.length > 0) {
-                    if (chartRef.current) {
-                        chartRef.current.destroy();
-                    }
-
+                    if (chartRef.current) chartRef.current.destroy();
                     const ctx = canvasRef.current.getContext('2d');
                     chartRef.current = new Chart(ctx, {
                         type: 'pie',
                         data: {
                             labels: data.map(d => d.label),
-                            datasets: [{
-                                data: data.map(d => d.value),
-                                backgroundColor: [
-                                    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-                                    '#EC4899', '#14B8A6', '#F97316'
-                                ],
-                            }]
+                            datasets: [{ data: data.map(d => d.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'] }]
                         },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: true,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        color: darkMode ? '#fff' : '#000',
-                                        padding: 15,
-                                        font: { size: 12 }
-                                    }
-                                }
-                            }
-                        }
+                        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: darkMode ? '#fff' : '#000', padding: 10, font: { size: 11 } } } } }
                     });
                 }
-
-                return () => {
-                    if (chartRef.current) {
-                        chartRef.current.destroy();
-                    }
-                };
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
             }, [data, darkMode]);
-
             return <canvas ref={canvasRef}></canvas>;
         };
 
         function TicketingSystem() {
-            // Auth State
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [currentUser, setCurrentUser] = useState(null);
             const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-
-            // UI State
+            const [loginError, setLoginError] = useState('');
             const [currentView, setCurrentView] = useState('dashboard');
             const [darkMode, setDarkMode] = useState(false);
             const [theme, setTheme] = useState('blue');
-            const [selectedTicket, setSelectedTicket] = useState(null);
-            const [showTicketDetails, setShowTicketDetails] = useState(false);
+            const [selectedTickets, setSelectedTickets] = useState([]);
+            const [editingTicket, setEditingTicket] = useState(null);
+            const [showEditModal, setShowEditModal] = useState(false);
 
-            // Staff/Users State
             const [users, setUsers] = useState([
                 { username: 'admin', password: 'admin123', name: 'Administrator', role: 'admin' },
                 { username: 'john', password: 'john123', name: 'John Smith', role: 'staff' },
                 { username: 'sarah', password: 'sarah123', name: 'Sarah Johnson', role: 'staff' },
             ]);
 
-            // Data State
             const [tickets, setTickets] = useState([
-                { id: 1, client: 'Tech Corp', issue: 'Server down', priority: 'high', urgency: 'high', status: 'open', assignedTo: 'admin', deadline: '2024-12-20', dateSent: '2024-12-15', description: 'Primary server is not responding. Need immediate attention. Please check network connectivity and server logs.' },
-                { id: 2, client: 'Web Solutions', issue: 'Email not working', priority: 'medium', urgency: 'medium', status: 'open', assignedTo: 'john', deadline: '2024-12-25', dateSent: '2024-12-14', description: 'Email service has stopped working for all users. SMTP server may be down.' },
-                { id: 3, client: 'Design Studio', issue: 'Website redesign', priority: 'low', urgency: 'low', status: 'open', assignedTo: 'sarah', deadline: '2024-12-30', dateSent: '2024-12-10', description: 'Need to update website with new branding guidelines and responsive design.' },
+                { id: 1, customer: 'Tech Corp', task: 'Server down', urgency: 'high', location: 'London, UK', assignedTo: 'admin', deadline: '2024-12-20', createdDate: '2024-12-15', description: 'Server not responding' },
+                { id: 2, customer: 'Web Solutions', task: 'Email not working', urgency: 'medium', location: 'Manchester, UK', assignedTo: 'john', deadline: '2024-12-16', createdDate: '2024-12-14', description: 'Email service stopped' },
+                { id: 3, customer: 'Design Studio', task: 'Website redesign', urgency: 'low', location: 'Birmingham, UK', assignedTo: 'sarah', deadline: '2024-12-30', createdDate: '2024-12-10', description: 'Website update' },
             ]);
             const [completedTickets, setCompletedTickets] = useState([]);
-            
             const [invoices, setInvoices] = useState([
-                { id: 1, client: 'Tech Corp', description: 'Server repair and maintenance', amount: 500, paid: false, date: '2024-12-15' },
-                { id: 2, client: 'Web Solutions', description: 'Email setup and configuration', amount: 200, paid: true, date: '2024-12-14' },
+                { id: 1, client: 'Tech Corp', description: 'Server repair', amount: 500, paid: false, date: '2024-12-15' },
             ]);
             const [invoiceRecycleBin, setInvoiceRecycleBin] = useState([]);
 
-            // Modal State
             const [showNewTicket, setShowNewTicket] = useState(false);
             const [showNewInvoice, setShowNewInvoice] = useState(false);
             const [showAddStaff, setShowAddStaff] = useState(false);
 
-            // Form State
-            const [newTicket, setNewTicket] = useState({ 
-                client: '', 
-                issue: '', 
-                description: '',
-                priority: 'medium', 
-                urgency: 'medium', 
-                assignedTo: 'admin', 
-                deadline: '', 
-                dateSent: new Date().toISOString().split('T')[0] 
-            });
-            const [newInvoice, setNewInvoice] = useState({ 
-                client: '', 
-                description: '', 
-                amount: 0, 
-                paid: false, 
-                date: new Date().toISOString().split('T')[0] 
-            });
-            const [newStaff, setNewStaff] = useState({
-                name: '',
-                username: '',
-                password: '',
-                role: 'staff'
-            });
+            const [newTicket, setNewTicket] = useState({ customer: '', task: '', description: '', urgency: 'medium', location: '', assignedTo: 'admin', deadline: '', createdDate: new Date().toISOString().split('T')[0] });
+            const [newInvoice, setNewInvoice] = useState({ client: '', description: '', amount: 0, paid: false, date: new Date().toISOString().split('T')[0] });
+            const [newStaff, setNewStaff] = useState({ name: '', username: '', password: '', role: 'staff' });
 
-            // Themes
             const themes = {
-                blue: {
-                    gradient: 'from-blue-500 via-blue-400 to-indigo-400',
-                    headerGradient: 'bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600',
-                },
-                green: {
-                    gradient: 'from-green-500 via-green-400 to-emerald-400',
-                    headerGradient: 'bg-gradient-to-r from-green-600 via-green-500 to-emerald-600',
-                },
-                purple: {
-                    gradient: 'from-purple-500 via-purple-400 to-violet-400',
-                    headerGradient: 'bg-gradient-to-r from-purple-600 via-purple-500 to-violet-600',
-                },
-                orange: {
-                    gradient: 'from-orange-500 via-orange-400 to-amber-400',
-                    headerGradient: 'bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600',
-                }
+                blue: { light: { gradient: 'from-blue-500 to-indigo-500', bg: 'bg-blue-600', hover: 'hover:bg-blue-700', sidebar: 'bg-gradient-to-b from-blue-600 to-indigo-700' }, dark: { gradient: 'from-blue-900 to-indigo-900', bg: 'bg-blue-800', hover: 'hover:bg-blue-900', sidebar: 'bg-gradient-to-b from-blue-900 to-indigo-950' } },
+                green: { light: { gradient: 'from-green-500 to-emerald-500', bg: 'bg-green-600', hover: 'hover:bg-green-700', sidebar: 'bg-gradient-to-b from-green-600 to-emerald-700' }, dark: { gradient: 'from-green-900 to-emerald-900', bg: 'bg-green-800', hover: 'hover:bg-green-900', sidebar: 'bg-gradient-to-b from-green-900 to-emerald-950' } },
+                purple: { light: { gradient: 'from-purple-500 to-violet-500', bg: 'bg-purple-600', hover: 'hover:bg-purple-700', sidebar: 'bg-gradient-to-b from-purple-600 to-violet-700' }, dark: { gradient: 'from-purple-900 to-violet-900', bg: 'bg-purple-800', hover: 'hover:bg-purple-900', sidebar: 'bg-gradient-to-b from-purple-900 to-violet-950' } },
+                orange: { light: { gradient: 'from-orange-500 to-amber-500', bg: 'bg-orange-600', hover: 'hover:bg-orange-700', sidebar: 'bg-gradient-to-b from-orange-600 to-amber-700' }, dark: { gradient: 'from-orange-900 to-amber-900', bg: 'bg-orange-800', hover: 'hover:bg-orange-900', sidebar: 'bg-gradient-to-b from-orange-900 to-amber-950' } }
             };
+            const currentTheme = themes[theme][darkMode ? 'dark' : 'light'];
 
-            const currentTheme = themes[theme];
-
-            // Functions
             const handleLogin = () => {
                 const user = users.find(u => u.username === loginForm.username && u.password === loginForm.password);
-                if (user) {
-                    setCurrentUser(user);
-                    setIsLoggedIn(true);
+                if (user) { 
+                    setCurrentUser(user); 
+                    setIsLoggedIn(true); 
+                    setLoginError('');
+                } else {
+                    setLoginError('Invalid username or password');
                 }
             };
 
-            const handleLogout = () => {
-                setIsLoggedIn(false);
-                setCurrentUser(null);
-                setLoginForm({ username: '', password: '' });
-            };
+            const handleLogout = () => { setIsLoggedIn(false); setCurrentUser(null); setLoginForm({ username: '', password: '' }); };
+            const createTicket = () => { setTickets([...tickets, { ...newTicket, id: Date.now() }]); setShowNewTicket(false); setNewTicket({ customer: '', task: '', description: '', urgency: 'medium', location: '', assignedTo: 'admin', deadline: '', createdDate: new Date().toISOString().split('T')[0] }); };
+            const updateTicket = () => { setTickets(tickets.map(t => t.id === editingTicket.id ? editingTicket : t)); setShowEditModal(false); setEditingTicket(null); };
+            const deleteTicket = (id) => { setTickets(tickets.filter(t => t.id !== id)); setSelectedTickets(selectedTickets.filter(tid => tid !== id)); };
+            const deleteSelectedTickets = () => { if (confirm(`Delete ${selectedTickets.length} tickets?`)) { setTickets(tickets.filter(t => !selectedTickets.includes(t.id))); setSelectedTickets([]); } };
+            const completeTicket = (id) => { const ticket = tickets.find(t => t.id === id); if (ticket) { setCompletedTickets([...completedTickets, { ...ticket, completedDate: new Date().toISOString().split('T')[0] }]); setTickets(tickets.filter(t => t.id !== id)); } setSelectedTickets(selectedTickets.filter(tid => tid !== id)); };
+            const restoreTicket = (id) => { const ticket = completedTickets.find(t => t.id === id); if (ticket) { const { completedDate, ...restored } = ticket; setTickets([...tickets, restored]); setCompletedTickets(completedTickets.filter(t => t.id !== id)); } };
+            const deleteCompletedTicket = (id) => { if (confirm('Delete permanently?')) setCompletedTickets(completedTickets.filter(t => t.id !== id)); };
+            const createInvoice = () => { setInvoices([...invoices, { ...newInvoice, id: Date.now() }]); setShowNewInvoice(false); setNewInvoice({ client: '', description: '', amount: 0, paid: false, date: new Date().toISOString().split('T')[0] }); };
+            const deleteInvoice = (id) => { const invoice = invoices.find(inv => inv.id === id); if (invoice) { setInvoiceRecycleBin([...invoiceRecycleBin, { ...invoice, deletedDate: new Date().toISOString().split('T')[0] }]); setInvoices(invoices.filter(i => i.id !== id)); } };
+            const restoreInvoice = (id) => { const invoice = invoiceRecycleBin.find(inv => inv.id === id); if (invoice) { const { deletedDate, ...restored } = invoice; setInvoices([...invoices, restored]); setInvoiceRecycleBin(invoiceRecycleBin.filter(i => i.id !== id)); } };
+            const permanentlyDeleteInvoice = (id) => { if (confirm('Delete permanently?')) setInvoiceRecycleBin(invoiceRecycleBin.filter(i => i.id !== id)); };
+            const toggleInvoicePaid = (id) => { setInvoices(invoices.map(inv => inv.id === id ? { ...inv, paid: !inv.paid } : inv)); };
+            const addStaff = () => { if (newStaff.name && newStaff.username && newStaff.password) { if (!users.find(u => u.username === newStaff.username)) { setUsers([...users, { ...newStaff }]); setShowAddStaff(false); setNewStaff({ name: '', username: '', password: '', role: 'staff' }); alert(`Staff added! Login: ${newStaff.username}`); } else { alert('Username exists!'); } } };
+            const removeStaff = (username) => { if (username !== 'admin' && confirm('Remove staff?')) setUsers(users.filter(u => u.username !== username)); };
+            const toggleTicketSelection = (id) => { setSelectedTickets(selectedTickets.includes(id) ? selectedTickets.filter(tid => tid !== id) : [...selectedTickets, id]); };
+            const selectAllTickets = () => { setSelectedTickets(selectedTickets.length === tickets.length ? [] : tickets.map(t => t.id)); };
+            const getMyTickets = () => tickets.filter(t => t.assignedTo === currentUser?.username);
+            const getOverdueTickets = () => tickets.filter(t => new Date(t.deadline) < new Date());
+            const getWorkloadData = () => { const workload = {}; tickets.forEach(ticket => { const assignee = ticket.assignedTo || 'Unassigned'; workload[assignee] = (workload[assignee] || 0) + 1; }); return Object.entries(workload).map(([label, value]) => ({ label, value })); };
+            const getUrgencyBreakdown = () => { const urgency = { high: 0, medium: 0, low: 0 }; tickets.forEach(t => urgency[t.urgency]++); return [{ label: 'High', value: urgency.high }, { label: 'Medium', value: urgency.medium }, { label: 'Low', value: urgency.low }]; };
 
-            const createTicket = () => {
-                setTickets([...tickets, { ...newTicket, id: Date.now(), status: 'open' }]);
-                setShowNewTicket(false);
-                setNewTicket({ 
-                    client: '', 
-                    issue: '', 
-                    description: '',
-                    priority: 'medium', 
-                    urgency: 'medium', 
-                    assignedTo: 'admin', 
-                    deadline: '', 
-                    dateSent: new Date().toISOString().split('T')[0] 
-                });
-            };
-
-            const deleteTicket = (id) => {
-                setTickets(tickets.filter(t => t.id !== id));
-            };
-
-            const completeTicket = (id) => {
-                const ticket = tickets.find(t => t.id === id);
-                if (ticket) {
-                    setCompletedTickets([...completedTickets, { ...ticket, completedDate: new Date().toISOString().split('T')[0] }]);
-                    setTickets(tickets.filter(t => t.id !== id));
-                }
-                setShowTicketDetails(false);
-            };
-
-            const restoreTicket = (id) => {
-                const ticket = completedTickets.find(t => t.id === id);
-                if (ticket) {
-                    const { completedDate, ...restoredTicket } = ticket;
-                    setTickets([...tickets, restoredTicket]);
-                    setCompletedTickets(completedTickets.filter(t => t.id !== id));
-                }
-            };
-
-            const createInvoice = () => {
-                setInvoices([...invoices, { ...newInvoice, id: Date.now() }]);
-                setShowNewInvoice(false);
-                setNewInvoice({ client: '', description: '', amount: 0, paid: false, date: new Date().toISOString().split('T')[0] });
-            };
-
-            const deleteInvoice = (id) => {
-                const invoice = invoices.find(inv => inv.id === id);
-                if (invoice) {
-                    setInvoiceRecycleBin([...invoiceRecycleBin, { ...invoice, deletedDate: new Date().toISOString().split('T')[0] }]);
-                    setInvoices(invoices.filter(i => i.id !== id));
-                }
-            };
-
-            const restoreInvoice = (id) => {
-                const invoice = invoiceRecycleBin.find(inv => inv.id === id);
-                if (invoice) {
-                    const { deletedDate, ...restoredInvoice } = invoice;
-                    setInvoices([...invoices, restoredInvoice]);
-                    setInvoiceRecycleBin(invoiceRecycleBin.filter(i => i.id !== id));
-                }
-            };
-
-            const permanentlyDeleteInvoice = (id) => {
-                setInvoiceRecycleBin(invoiceRecycleBin.filter(i => i.id !== id));
-            };
-
-            const toggleInvoicePaid = (id) => {
-                setInvoices(invoices.map(inv => inv.id === id ? { ...inv, paid: !inv.paid } : inv));
-            };
-
-            const addStaff = () => {
-                if (newStaff.name && newStaff.username && newStaff.password) {
-                    const userExists = users.find(u => u.username === newStaff.username);
-                    if (!userExists) {
-                        setUsers([...users, { ...newStaff }]);
-                        setShowAddStaff(false);
-                        setNewStaff({ name: '', username: '', password: '', role: 'staff' });
-                        alert(`Staff member ${newStaff.name} added successfully! They can now login with username: ${newStaff.username}`);
-                    } else {
-                        alert('Username already exists!');
-                    }
-                }
-            };
-
-            const removeStaff = (username) => {
-                if (username !== 'admin') {
-                    if (confirm(`Are you sure you want to remove this staff member?`)) {
-                        setUsers(users.filter(u => u.username !== username));
-                    }
-                }
-            };
-
-            const getMyTickets = () => {
-                return tickets.filter(t => t.assignedTo === currentUser?.username);
-            };
-
-            const getRecentTickets = () => {
-                return [...tickets].sort((a, b) => new Date(b.dateSent) - new Date(a.dateSent)).slice(0, 5);
-            };
-
-            const getWorkloadData = () => {
-                const workload = {};
-                tickets.forEach(ticket => {
-                    const assignee = ticket.assignedTo || 'Unassigned';
-                    workload[assignee] = (workload[assignee] || 0) + 1;
-                });
-                return Object.entries(workload).map(([label, value]) => ({ label, value }));
-            };
-
-            const viewTicketDetails = (ticket) => {
-                setSelectedTicket(ticket);
-                setShowTicketDetails(true);
-            };
-
-            const getStaffList = () => {
-                return users.filter(u => u.role === 'staff');
-            };
-
-            // Login Screen
             if (!isLoggedIn) {
                 return (
-                    <div className={`min-h-screen bg-gradient-to-br ${darkMode ? 'from-gray-900 to-gray-800' : 'from-blue-50 to-indigo-100'} flex items-center justify-center p-4`}>
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-2xl p-8 w-full max-w-md`}>
+                    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} flex items-center justify-center p-4`}>
+                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-2xl p-8 w-full max-w-md`}>
                             <div className="text-center mb-8">
-                                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mx-auto mb-4">
-                                    <Icon name="zap" className="text-white" size={32} />
-                                </div>
                                 <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Genius IT</h1>
-                                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Support System Login</p>
+                                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Support System</p>
                             </div>
-                            
                             <div className="space-y-4">
-                                <div>
-                                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Username</label>
-                                    <input
-                                        type="text"
-                                        value={loginForm.username}
-                                        onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                                        className={`w-full px-4 py-3 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
-                                        placeholder="Enter username"
-                                    />
-                                </div>
-                                
-                                <div>
-                                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Password</label>
-                                    <input
-                                        type="password"
-                                        value={loginForm.password}
-                                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                                        className={`w-full px-4 py-3 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500`}
-                                        placeholder="Enter password"
-                                    />
-                                </div>
-                                
-                                <button
-                                    onClick={handleLogin}
-                                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-                                >
-                                    Sign In
-                                </button>
-
-                                <div className={`mt-4 p-3 ${darkMode ? 'bg-gray-700' : 'bg-blue-50'} rounded-lg`}>
-                                    <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'} font-medium mb-2`}>Demo Accounts:</p>
-                                    <p className="text-xs text-gray-500">Admin: admin / admin123</p>
-                                    <p className="text-xs text-gray-500">Staff: john / john123</p>
+                                {loginError && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 text-sm">
+                                        {loginError}
+                                    </div>
+                                )}
+                                <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} 
+                                    className={`w-full px-4 py-3 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} placeholder="Username" />
+                                <input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} 
+                                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()} 
+                                    className={`w-full px-4 py-3 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} placeholder="Password" />
+                                <button onClick={handleLogin} className={`w-full bg-gradient-to-r ${currentTheme.gradient} text-white py-3 font-semibold ${currentTheme.hover}`}>Sign In</button>
+                                <div className={`p-3 ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                                    <p className="text-xs text-gray-500">Demo: admin / admin123</p>
                                 </div>
                             </div>
                         </div>
@@ -365,358 +173,123 @@
                 );
             }
 
-            // Main App
             return (
                 <div className="flex min-h-screen">
-                    {/* Sidebar - Desktop */}
-                    <aside className={`w-64 min-h-screen fixed left-0 top-0 ${darkMode ? 'bg-gradient-to-b from-gray-900 to-gray-800' : currentTheme.headerGradient} shadow-2xl z-10 hidden lg:flex flex-col`}>
-                        {/* Logo */}
+                    <aside className={`w-64 min-h-screen fixed left-0 top-0 ${currentTheme.sidebar} shadow-2xl z-10 hidden lg:flex flex-col`}>
                         <div className="p-6 border-b border-white/10">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                                    <Icon name="zap" className="text-white" size={28} />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Genius IT</h2>
-                                    <p className="text-xs text-white/70">Support System</p>
-                                </div>
-                            </div>
+                            <h2 className="text-2xl font-bold text-white">Genius IT</h2>
+                            <p className="text-sm text-white/70">Support System</p>
                         </div>
-
-                        {/* Navigation */}
                         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                            <button
-                                onClick={() => setCurrentView('dashboard')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                                    currentView === 'dashboard'
-                                        ? 'bg-white/20 text-white shadow-lg'
-                                        : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
-                                <Icon name="layout-dashboard" size={20} />
-                                <span className="font-semibold">Dashboard</span>
-                            </button>
-                            
-                            <button
-                                onClick={() => setCurrentView('tickets')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                                    currentView === 'tickets'
-                                        ? 'bg-white/20 text-white shadow-lg'
-                                        : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
-                                <Icon name="ticket" size={20} />
-                                <span className="font-semibold">Tickets</span>
-                                <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">{tickets.length}</span>
-                            </button>
-                            
-                            <button
-                                onClick={() => setCurrentView('my-tickets')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                                    currentView === 'my-tickets'
-                                        ? 'bg-white/20 text-white shadow-lg'
-                                        : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
-                                <Icon name="user-check" size={20} />
-                                <span className="font-semibold">My Tickets</span>
-                                <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">{getMyTickets().length}</span>
-                            </button>
-
-                            <button
-                                onClick={() => setCurrentView('completed')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                                    currentView === 'completed'
-                                        ? 'bg-white/20 text-white shadow-lg'
-                                        : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
-                                <Icon name="check-circle" size={20} />
-                                <span className="font-semibold">Completed</span>
-                                <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">{completedTickets.length}</span>
-                            </button>
-                            
-                            <button
-                                onClick={() => setCurrentView('invoices')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                                    currentView === 'invoices'
-                                        ? 'bg-white/20 text-white shadow-lg'
-                                        : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
-                                <Icon name="file-text" size={20} />
-                                <span className="font-semibold">Invoices</span>
-                                <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">{invoices.length}</span>
-                            </button>
-
-                            <button
-                                onClick={() => setCurrentView('invoice-bin')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                                    currentView === 'invoice-bin'
-                                        ? 'bg-white/20 text-white shadow-lg'
-                                        : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
-                                <Icon name="trash-2" size={20} />
-                                <span className="font-semibold">Recycle Bin</span>
-                                <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">{invoiceRecycleBin.length}</span>
-                            </button>
-                            
+                            {[
+                                { view: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
+                                { view: 'tickets', icon: 'ticket', label: 'Tickets', badge: tickets.length },
+                                { view: 'my-tickets', icon: 'user-check', label: 'My Tickets', badge: getMyTickets().length },
+                                { view: 'overdue', icon: 'alert-circle', label: 'Overdue', badge: getOverdueTickets().length, red: true },
+                                { view: 'completed', icon: 'check-circle', label: 'Completed', badge: completedTickets.length },
+                                { view: 'invoices', icon: 'file-text', label: 'Invoices', badge: invoices.length },
+                                { view: 'invoice-bin', icon: 'trash-2', label: 'Recycle Bin', badge: invoiceRecycleBin.length },
+                            ].map(item => (
+                                <button key={item.view} onClick={() => setCurrentView(item.view)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 transition-all ${
+                                        currentView === item.view ? 'bg-white/20 text-white shadow-lg' : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                    }`}>
+                                    <Icon name={item.icon} size={20} />
+                                    <span className="font-semibold">{item.label}</span>
+                                    {item.badge > 0 && <span className={`ml-auto text-xs px-2 py-1 ${item.red ? 'bg-red-500' : 'bg-white/20'}`}>{item.badge}</span>}
+                                </button>
+                            ))}
                             {currentUser?.role === 'admin' && (
                                 <>
                                     <div className="my-4 border-t border-white/10"></div>
-                                    <button
-                                        onClick={() => setCurrentView('admin')}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                                            currentView === 'admin'
-                                                ? 'bg-white/20 text-white shadow-lg'
-                                                : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                        }`}
-                                    >
+                                    <button onClick={() => setCurrentView('admin')} className={`w-full flex items-center gap-3 px-4 py-3 transition-all ${
+                                        currentView === 'admin' ? 'bg-white/20 text-white shadow-lg' : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                    }`}>
                                         <Icon name="shield" size={20} />
                                         <span className="font-semibold">Admin Panel</span>
                                     </button>
                                 </>
                             )}
-                            
                             <div className="my-4 border-t border-white/10"></div>
-                            
-                            <button
-                                onClick={() => setCurrentView('settings')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                                    currentView === 'settings'
-                                        ? 'bg-white/20 text-white shadow-lg'
-                                        : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
+                            <button onClick={() => setCurrentView('settings')} className={`w-full flex items-center gap-3 px-4 py-3 transition-all ${
+                                currentView === 'settings' ? 'bg-white/20 text-white shadow-lg' : 'text-white/70 hover:bg-white/10 hover:text-white'
+                            }`}>
                                 <Icon name="settings" size={20} />
                                 <span className="font-semibold">Settings</span>
                             </button>
                         </nav>
-
-                        {/* User Section */}
                         <div className="p-4 border-t border-white/10 bg-white/5">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center text-white font-bold">
+                                <div className="w-10 h-10 bg-white/30 flex items-center justify-center text-white font-bold">
                                     {currentUser.username.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-semibold text-white text-sm truncate">{currentUser.name}</p>
-                                    <p className="text-xs text-white/70 capitalize">{currentUser.role}</p>
+                                    <p className="text-xs text-white/70">{currentUser.role}</p>
                                 </div>
-                                <button
-                                    onClick={() => setDarkMode(!darkMode)}
-                                    className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white"
-                                >
+                                <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/10 text-white/70 hover:text-white">
                                     <Icon name={darkMode ? 'sun' : 'moon'} size={18} />
                                 </button>
-                                <button
-                                    onClick={handleLogout}
-                                    className="p-2 rounded-lg hover:bg-white/10 text-white/70 hover:text-white"
-                                >
+                                <button onClick={handleLogout} className="p-2 hover:bg-white/10 text-white/70 hover:text-white">
                                     <Icon name="log-out" size={18} />
                                 </button>
                             </div>
                         </div>
                     </aside>
 
-                    {/* Main Content */}
                     <main className={`flex-1 lg:ml-64 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
-                        {/* Mobile Header */}
                         <header className={`lg:hidden ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-b sticky top-0 z-20`}>
                             <div className="px-4 py-4 flex items-center justify-between">
                                 <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Genius IT</h1>
                                 <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setDarkMode(!darkMode)}
-                                        className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}
-                                    >
+                                    <button onClick={() => setDarkMode(!darkMode)} className={`p-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                                         <Icon name={darkMode ? 'sun' : 'moon'} size={20} />
                                     </button>
-                                    <button
-                                        onClick={handleLogout}
-                                        className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}
-                                    >
+                                    <button onClick={handleLogout} className={`p-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                                         <Icon name="log-out" size={20} />
                                     </button>
                                 </div>
                             </div>
                         </header>
 
-                        <div className="max-w-7xl mx-auto px-4 py-8">
-                            {/* Mobile Navigation */}
-                            <div className="lg:hidden flex gap-2 mb-6 overflow-x-auto pb-2">
-                                <button
-                                    onClick={() => setCurrentView('dashboard')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                                        currentView === 'dashboard'
-                                            ? `bg-gradient-to-r ${currentTheme.gradient} text-white`
-                                            : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                    }`}
-                                >
-                                    <Icon name="layout-dashboard" size={20} />
-                                    Dashboard
-                                </button>
-                                <button
-                                    onClick={() => setCurrentView('tickets')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                                        currentView === 'tickets'
-                                            ? `bg-gradient-to-r ${currentTheme.gradient} text-white`
-                                            : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                    }`}
-                                >
-                                    <Icon name="ticket" size={20} />
-                                    Tickets
-                                </button>
-                                <button
-                                    onClick={() => setCurrentView('my-tickets')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                                        currentView === 'my-tickets'
-                                            ? `bg-gradient-to-r ${currentTheme.gradient} text-white`
-                                            : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                    }`}
-                                >
-                                    <Icon name="user-check" size={20} />
-                                    My Tickets
-                                </button>
-                                <button
-                                    onClick={() => setCurrentView('completed')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                                        currentView === 'completed'
-                                            ? `bg-gradient-to-r ${currentTheme.gradient} text-white`
-                                            : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                    }`}
-                                >
-                                    <Icon name="check-circle" size={20} />
-                                    Completed
-                                </button>
-                                <button
-                                    onClick={() => setCurrentView('invoices')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                                        currentView === 'invoices'
-                                            ? `bg-gradient-to-r ${currentTheme.gradient} text-white`
-                                            : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                    }`}
-                                >
-                                    <Icon name="file-text" size={20} />
-                                    Invoices
-                                </button>
-                                {currentUser?.role === 'admin' && (
-                                    <button
-                                        onClick={() => setCurrentView('admin')}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                                            currentView === 'admin'
-                                                ? `bg-gradient-to-r ${currentTheme.gradient} text-white`
-                                                : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                        }`}
-                                    >
-                                        <Icon name="shield" size={20} />
-                                        Admin
-                                    </button>
-                                )}
-                                <button
-                                    onClick={() => setCurrentView('settings')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                                        currentView === 'settings'
-                                            ? `bg-gradient-to-r ${currentTheme.gradient} text-white`
-                                            : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'
-                                    }`}
-                                >
-                                    <Icon name="settings" size={20} />
-                                    Settings
-                                </button>
-                            </div>
-
+                        <div className="max-w-full mx-auto p-4 md:p-6 lg:p-8">
                             {/* Dashboard View */}
                             {currentView === 'dashboard' && (
                                 <div>
-                                    <h2 className={`text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Dashboard Overview</h2>
-                                    
-                                    {/* Stats Cards */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Open Tickets</h3>
-                                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                    <Icon name="ticket" className="text-blue-600" size={20} />
+                                    <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Dashboard Analytics</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                                        {[
+                                            { label: 'Open Tickets', value: tickets.length, icon: 'ticket', color: 'blue', trend: '+12%' },
+                                            { label: 'My Tickets', value: getMyTickets().length, icon: 'user-check', color: 'green', trend: '+5%' },
+                                            { label: 'Completed', value: completedTickets.length, icon: 'check-circle', color: 'purple', trend: '+18%' },
+                                            { label: 'Overdue', value: getOverdueTickets().length, icon: 'alert-circle', color: 'red', trend: '-3%' },
+                                        ].map((stat, i) => (
+                                            <div key={i} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6 border-l-4 border-${stat.color}-500`}>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className={`text-xs md:text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.label}</h3>
+                                                    <Icon name={stat.icon} className={darkMode ? `text-${stat.color}-400` : `text-${stat.color}-600`} size={20} />
                                                 </div>
+                                                <p className={`text-2xl md:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stat.value}</p>
+                                                <p className="text-xs mt-2 text-green-600 flex items-center gap-1">
+                                                    <Icon name="trending-up" size={14} />
+                                                    {stat.trend} from last month
+                                                </p>
                                             </div>
-                                            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{tickets.length}</p>
-                                        </div>
-
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>My Tickets</h3>
-                                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                                    <Icon name="user-check" className="text-green-600" size={20} />
-                                                </div>
-                                            </div>
-                                            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{getMyTickets().length}</p>
-                                        </div>
-
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Completed</h3>
-                                                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                                    <Icon name="check-circle" className="text-purple-600" size={20} />
-                                                </div>
-                                            </div>
-                                            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{completedTickets.length}</p>
-                                        </div>
-
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Invoices</h3>
-                                                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                                                    <Icon name="file-text" className="text-orange-600" size={20} />
-                                                </div>
-                                            </div>
-                                            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{invoices.length}</p>
-                                        </div>
+                                        ))}
                                     </div>
-
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                                        {/* Workload Chart */}
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                            <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Workload Distribution</h3>
-                                            <div className="h-64 flex items-center justify-center">
-                                                {getWorkloadData().length > 0 ? (
-                                                    <PieChart data={getWorkloadData()} darkMode={darkMode} />
-                                                ) : (
-                                                    <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No workload data available</p>
-                                                )}
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6`}>
+                                            <h3 className={`text-lg md:text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Workload Distribution</h3>
+                                            <div className="h-48 md:h-64">
+                                                {getWorkloadData().length > 0 ? <PieChart data={getWorkloadData()} darkMode={darkMode} /> : 
+                                                <p className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No data</p>}
                                             </div>
                                         </div>
-
-                                        {/* Recent Tickets */}
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                            <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Recent Tickets</h3>
-                                            <div className="space-y-3 max-h-64 overflow-y-auto">
-                                                {getRecentTickets().length > 0 ? getRecentTickets().map(ticket => (
-                                                    <div 
-                                                        key={ticket.id} 
-                                                        onClick={() => viewTicketDetails(ticket)}
-                                                        className={`p-4 rounded-lg cursor-pointer transition-all ${
-                                                            darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'
-                                                        }`}
-                                                    >
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="flex-1">
-                                                                <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{ticket.client}</p>
-                                                                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} truncate`}>{ticket.issue}</p>
-                                                            </div>
-                                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                                                ticket.priority === 'high' ? 'bg-red-100 text-red-800' :
-                                                                ticket.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-green-100 text-green-800'
-                                                            }`}>
-                                                                {ticket.priority}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                )) : (
-                                                    <p className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No recent tickets</p>
-                                                )}
+                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6`}>
+                                            <h3 className={`text-lg md:text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Urgency Breakdown</h3>
+                                            <div className="h-48 md:h-64">
+                                                {getUrgencyBreakdown().length > 0 ? <PieChart data={getUrgencyBreakdown()} darkMode={darkMode} /> : 
+                                                <p className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No data</p>}
                                             </div>
                                         </div>
                                     </div>
@@ -726,61 +299,83 @@
                             {/* Tickets View */}
                             {currentView === 'tickets' && (
                                 <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>All Tickets</h2>
-                                        <button
-                                            onClick={() => setShowNewTicket(true)}
-                                            className={`flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r ${currentTheme.gradient} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all`}
-                                        >
-                                            <Icon name="plus" size={20} />
-                                            New Ticket
-                                        </button>
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                                        <h2 className={`text-2xl md:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>All Tickets</h2>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedTickets.length > 0 && (
+                                                <button onClick={deleteSelectedTickets} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700">
+                                                    <Icon name="trash-2" size={16} />
+                                                    Delete ({selectedTickets.length})
+                                                </button>
+                                            )}
+                                            <button onClick={() => setShowNewTicket(true)} className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold shadow-lg`}>
+                                                <Icon name="plus" size={16} />
+                                                New Ticket
+                                            </button>
+                                        </div>
                                     </div>
-
-                                    <div className="space-y-4">
-                                        {tickets.map(ticket => (
-                                            <div 
-                                                key={ticket.id} 
-                                                onClick={() => viewTicketDetails(ticket)}
-                                                className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl transition-all`}
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
-                                                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{ticket.client}</h3>
-                                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>{ticket.issue}</p>
-                                                        <div className="flex gap-2 flex-wrap">
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                                ticket.priority === 'high' ? 'bg-red-100 text-red-800' :
-                                                                ticket.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-green-100 text-green-800'
-                                                            }`}>
-                                                                {ticket.priority}
-                                                            </span>
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
-                                                                Assigned: {ticket.assignedTo}
-                                                            </span>
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg overflow-x-auto`}>
+                                        <table className="w-full min-w-max">
+                                            <thead className={`${darkMode ? 'bg-gray-900' : 'bg-gray-100'} border-b-2`}>
+                                                <tr>
+                                                    <th className="p-2 md:p-3 text-left">
+                                                        <input type="checkbox" checked={selectedTickets.length === tickets.length && tickets.length > 0} 
+                                                            onChange={selectAllTickets} className="w-4 h-4" />
+                                                    </th>
+                                                    {['Customer', 'Task', 'Deadline', 'Location', 'Created', 'Urgency', 'Actions'].map(col => (
+                                                        <th key={col} className={`p-2 md:p-3 text-left text-xs md:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{col}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {tickets.map(ticket => (
+                                                    <tr key={ticket.id} className={`border-b ${darkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                                        <td className="p-2 md:p-3">
+                                                            <input type="checkbox" checked={selectedTickets.includes(ticket.id)} 
+                                                                onChange={() => toggleTicketSelection(ticket.id)} className="w-4 h-4" />
+                                                        </td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{ticket.customer}</td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{ticket.task}</td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                            <span className="flex items-center gap-1">
                                                                 <Icon name="clock" size={12} />
-                                                                {ticket.deadline}
+                                                                Deadline: {ticket.deadline}
                                                             </span>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            deleteTicket(ticket.id);
-                                                        }}
-                                                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                                    >
-                                                        <Icon name="trash-2" className="text-red-600" size={20} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
+                                                        </td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                            <span className="flex items-center gap-1">
+                                                                <Icon name="map-pin" size={12} />
+                                                                {ticket.location}
+                                                            </span>
+                                                        </td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{ticket.createdDate}</td>
+                                                        <td className="p-2 md:p-3">
+                                                            <span className={`px-2 py-1 text-xs font-semibold ${
+                                                                ticket.urgency === 'high' ? 'bg-red-100 text-red-800' :
+                                                                ticket.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                                                            }`}>{ticket.urgency.toUpperCase()}</span>
+                                                        </td>
+                                                        <td className="p-2 md:p-3">
+                                                            <div className="flex gap-1">
+                                                                <button onClick={() => { setEditingTicket(ticket); setShowEditModal(true); }} className="p-1 hover:bg-blue-100" title="Edit">
+                                                                    <Icon name="edit" className="text-blue-600" size={16} />
+                                                                </button>
+                                                                <button onClick={() => completeTicket(ticket.id)} className="p-1 hover:bg-green-100" title="Complete">
+                                                                    <Icon name="check-circle" className="text-green-600" size={16} />
+                                                                </button>
+                                                                <button onClick={() => deleteTicket(ticket.id)} className="p-1 hover:bg-red-100" title="Delete">
+                                                                    <Icon name="trash-2" className="text-red-600" size={16} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                         {tickets.length === 0 && (
-                                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-12 text-center`}>
+                                            <div className="p-12 text-center">
                                                 <Icon name="ticket" className={`${darkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} size={48} />
-                                                <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No open tickets</p>
+                                                <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No tickets</p>
                                             </div>
                                         )}
                                     </div>
@@ -790,41 +385,39 @@
                             {/* My Tickets View */}
                             {currentView === 'my-tickets' && (
                                 <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>My Tickets</h2>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {getMyTickets().map(ticket => (
-                                            <div 
-                                                key={ticket.id} 
-                                                onClick={() => viewTicketDetails(ticket)}
-                                                className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl transition-all`}
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
-                                                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{ticket.client}</h3>
-                                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>{ticket.issue}</p>
-                                                        <div className="flex gap-2 flex-wrap">
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                                ticket.priority === 'high' ? 'bg-red-100 text-red-800' :
-                                                                ticket.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-green-100 text-green-800'
-                                                            }`}>
-                                                                {ticket.priority}
-                                                            </span>
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
-                                                                <Icon name="clock" size={12} />
-                                                                {ticket.deadline}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                    <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>My Tickets</h2>
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg overflow-x-auto`}>
+                                        <table className="w-full min-w-max">
+                                            <thead className={`${darkMode ? 'bg-gray-900' : 'bg-gray-100'} border-b-2`}>
+                                                <tr>
+                                                    {['Customer', 'Task', 'Deadline', 'Urgency', 'Actions'].map(col => (
+                                                        <th key={col} className={`p-2 md:p-3 text-left text-xs md:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{col}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {getMyTickets().map(ticket => (
+                                                    <tr key={ticket.id} className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{ticket.customer}</td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{ticket.task}</td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Deadline: {ticket.deadline}</td>
+                                                        <td className="p-2 md:p-3">
+                                                            <span className={`px-2 py-1 text-xs font-semibold ${
+                                                                ticket.urgency === 'high' ? 'bg-red-100 text-red-800' :
+                                                                ticket.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                                                            }`}>{ticket.urgency.toUpperCase()}</span>
+                                                        </td>
+                                                        <td className="p-2 md:p-3">
+                                                            <button onClick={() => completeTicket(ticket.id)} className="px-3 py-1 bg-green-600 text-white text-xs font-semibold hover:bg-green-700">
+                                                                Complete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                         {getMyTickets().length === 0 && (
-                                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-12 text-center`}>
-                                                <Icon name="user-check" className={`${darkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} size={48} />
+                                            <div className="p-12 text-center">
                                                 <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No tickets assigned to you</p>
                                             </div>
                                         )}
@@ -832,46 +425,78 @@
                                 </div>
                             )}
 
-                            {/* Completed Tickets View */}
+                            {/* Overdue View */}
+                            {currentView === 'overdue' && (
+                                <div>
+                                    <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Overdue Tickets</h2>
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg overflow-x-auto`}>
+                                        <table className="w-full min-w-max">
+                                            <thead className={`${darkMode ? 'bg-red-900' : 'bg-red-100'} border-b-2`}>
+                                                <tr>
+                                                    {['Customer', 'Task', 'Deadline', 'Assigned', 'Actions'].map(col => (
+                                                        <th key={col} className={`p-2 md:p-3 text-left text-xs md:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{col}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {getOverdueTickets().map(ticket => (
+                                                    <tr key={ticket.id} className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{ticket.customer}</td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{ticket.task}</td>
+                                                        <td className="p-2 md:p-3 text-xs md:text-sm text-red-600 font-semibold">Deadline: {ticket.deadline}</td>
+                                                        <td className={`p-2 md:p-3 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{ticket.assignedTo}</td>
+                                                        <td className="p-2 md:p-3">
+                                                            <button onClick={() => completeTicket(ticket.id)} className="px-3 py-1 bg-green-600 text-white text-xs font-semibold hover:bg-green-700">
+                                                                Complete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {getOverdueTickets().length === 0 && (
+                                            <div className="p-12 text-center">
+                                                <Icon name="check-circle" className={`${darkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} size={48} />
+                                                <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No overdue tickets</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Completed View */}
                             {currentView === 'completed' && (
                                 <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Completed Tickets</h2>
-                                    </div>
-
+                                    <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Completed Tickets</h2>
                                     <div className="space-y-4">
                                         {completedTickets.map(ticket => (
-                                            <div key={ticket.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                                <div className="flex justify-between items-start">
+                                            <div key={ticket.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6 border-l-4 border-green-500`}>
+                                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                                     <div className="flex-1">
-                                                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{ticket.client}</h3>
-                                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>{ticket.issue}</p>
-                                                        <div className="flex gap-2 flex-wrap">
-                                                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                                                ✓ Completed
-                                                            </span>
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
-                                                                Completed: {ticket.completedDate}
-                                                            </span>
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
-                                                                By: {ticket.assignedTo}
+                                                        <h3 className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{ticket.customer}</h3>
+                                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2 text-sm md:text-base`}>{ticket.task}</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800">✓ Completed</span>
+                                                            <span className={`px-2 py-1 text-xs font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
+                                                                {ticket.completedDate}
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={() => restoreTicket(ticket.id)}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                                    >
-                                                        <Icon name="rotate-ccw" size={16} />
-                                                        Restore
-                                                    </button>
+                                                    <div className="flex gap-2 w-full sm:w-auto">
+                                                        <button onClick={() => restoreTicket(ticket.id)} className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
+                                                            Restore
+                                                        </button>
+                                                        <button onClick={() => deleteCompletedTicket(ticket.id)} className="px-3 py-2 bg-red-600 text-white hover:bg-red-700">
+                                                            <Icon name="trash-2" size={16} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
                                         {completedTickets.length === 0 && (
-                                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-12 text-center`}>
+                                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-12 text-center`}>
                                                 <Icon name="check-circle" className={`${darkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} size={48} />
-                                                <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No completed tickets yet</p>
+                                                <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No completed tickets</p>
                                             </div>
                                         )}
                                     </div>
@@ -881,54 +506,41 @@
                             {/* Invoices View */}
                             {currentView === 'invoices' && (
                                 <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Invoices</h2>
-                                        <button
-                                            onClick={() => setShowNewInvoice(true)}
-                                            className={`flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r ${currentTheme.gradient} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all`}
-                                        >
-                                            <Icon name="plus" size={20} />
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                                        <h2 className={`text-2xl md:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Invoices</h2>
+                                        <button onClick={() => setShowNewInvoice(true)} className={`w-full sm:w-auto px-4 py-2 bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold shadow-lg`}>
+                                            <Icon name="plus" size={16} className="inline mr-2" />
                                             New Invoice
                                         </button>
                                     </div>
-
                                     <div className="space-y-4">
                                         {invoices.map(invoice => (
-                                            <div key={invoice.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
-                                                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{invoice.client}</h3>
-                                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>{invoice.description}</p>
-                                                        <p className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'} mb-2`}>
+                                            <div key={invoice.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6`}>
+                                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                                                    <div className="flex-1 w-full">
+                                                        <h3 className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{invoice.client}</h3>
+                                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2 text-sm md:text-base`}>{invoice.description}</p>
+                                                        <p className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'} mb-2`}>
                                                             ${invoice.amount.toFixed(2)}
                                                         </p>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => toggleInvoicePaid(invoice.id)}
-                                                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                                    invoice.paid
-                                                                        ? 'bg-green-100 text-green-800'
-                                                                        : 'bg-red-100 text-red-800'
-                                                                }`}
-                                                            >
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <button onClick={() => toggleInvoicePaid(invoice.id)} 
+                                                                className={`px-3 py-1 text-xs font-semibold ${invoice.paid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                                                 {invoice.paid ? '✓ Paid' : '✗ Unpaid'}
                                                             </button>
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
-                                                                Date: {invoice.date}
+                                                            <span className={`px-3 py-1 text-xs font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
+                                                                {invoice.date}
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={() => deleteInvoice(invoice.id)}
-                                                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                                    >
+                                                    <button onClick={() => deleteInvoice(invoice.id)} className="p-2 hover:bg-red-100">
                                                         <Icon name="trash-2" className="text-red-600" size={20} />
                                                     </button>
                                                 </div>
                                             </div>
                                         ))}
                                         {invoices.length === 0 && (
-                                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-12 text-center`}>
+                                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-12 text-center`}>
                                                 <Icon name="file-text" className={`${darkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} size={48} />
                                                 <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>No invoices</p>
                                             </div>
@@ -937,56 +549,37 @@
                                 </div>
                             )}
 
-                            {/* Invoice Recycle Bin View */}
+                            {/* Invoice Recycle Bin */}
                             {currentView === 'invoice-bin' && (
                                 <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Invoice Recycle Bin</h2>
-                                    </div>
-
+                                    <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Invoice Recycle Bin</h2>
                                     <div className="space-y-4">
                                         {invoiceRecycleBin.map(invoice => (
-                                            <div key={invoice.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                                <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
-                                                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{invoice.client}</h3>
-                                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>{invoice.description}</p>
-                                                        <p className={`text-2xl font-bold ${darkMode ? 'text-gray-500' : 'text-gray-600'} mb-2`}>
+                                            <div key={invoice.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6`}>
+                                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                                                    <div className="flex-1 w-full">
+                                                        <h3 className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{invoice.client}</h3>
+                                                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2 text-sm`}>{invoice.description}</p>
+                                                        <p className={`text-xl font-bold ${darkMode ? 'text-gray-500' : 'text-gray-600'} mb-2`}>
                                                             ${invoice.amount.toFixed(2)}
                                                         </p>
-                                                        <div className="flex gap-2">
-                                                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                                                Deleted
-                                                            </span>
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'}`}>
-                                                                Deleted: {invoice.deletedDate}
-                                                            </span>
-                                                        </div>
+                                                        <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800">
+                                                            Deleted: {invoice.deletedDate}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => restoreInvoice(invoice.id)}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                                        >
-                                                            <Icon name="rotate-ccw" size={16} />
+                                                    <div className="flex gap-2 w-full sm:w-auto">
+                                                        <button onClick={() => restoreInvoice(invoice.id)} className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
                                                             Restore
                                                         </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                if (confirm('Permanently delete this invoice?')) {
-                                                                    permanentlyDeleteInvoice(invoice.id);
-                                                                }
-                                                            }}
-                                                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                                        >
-                                                            <Icon name="x" className="text-red-600" size={20} />
+                                                        <button onClick={() => permanentlyDeleteInvoice(invoice.id)} className="px-3 py-2 bg-red-600 text-white hover:bg-red-700">
+                                                            <Icon name="x" size={16} />
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
                                         ))}
                                         {invoiceRecycleBin.length === 0 && (
-                                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-12 text-center`}>
+                                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-12 text-center`}>
                                                 <Icon name="trash-2" className={`${darkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} size={48} />
                                                 <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Recycle bin is empty</p>
                                             </div>
@@ -995,83 +588,64 @@
                                 </div>
                             )}
 
-                            {/* Admin Panel View */}
+                            {/* Admin Panel */}
                             {currentView === 'admin' && currentUser?.role === 'admin' && (
                                 <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Admin Panel</h2>
-                                        <button
-                                            onClick={() => setShowAddStaff(true)}
-                                            className={`flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r ${currentTheme.gradient} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all`}
-                                        >
-                                            <Icon name="user-plus" size={20} />
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                                        <h2 className={`text-2xl md:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Admin Panel</h2>
+                                        <button onClick={() => setShowAddStaff(true)} className={`w-full sm:w-auto px-4 py-2 bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold shadow-lg`}>
+                                            <Icon name="user-plus" size={16} className="inline mr-2" />
                                             Add Staff
                                         </button>
                                     </div>
-
-                                    {/* Staff Management */}
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 mb-6`}>
-                                        <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Staff Members</h3>
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6 mb-6`}>
+                                        <h3 className={`text-lg md:text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Staff Members</h3>
                                         <div className="space-y-3">
                                             {users.map(user => (
-                                                <div key={user.username} className={`p-4 rounded-lg flex items-center justify-between ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`w-12 h-12 rounded-full ${
-                                                            user.role === 'admin' ? 'bg-blue-500' : 'bg-green-500'
-                                                        } flex items-center justify-center text-white font-bold`}>
+                                                <div key={user.username} className={`p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                                    <div className="flex items-center gap-3 md:gap-4">
+                                                        <div className={`w-10 h-10 md:w-12 md:h-12 ${user.role === 'admin' ? 'bg-blue-500' : 'bg-green-500'} flex items-center justify-center text-white font-bold`}>
                                                             {user.name.charAt(0).toUpperCase()}
                                                         </div>
                                                         <div>
-                                                            <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{user.name}</p>
-                                                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                            <p className={`font-semibold text-sm md:text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>{user.name}</p>
+                                                            <p className={`text-xs md:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                                                 @{user.username} • {user.role}
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        {user.role === 'admin' ? (
-                                                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                                                                Admin
-                                                            </span>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => removeStaff(user.username)}
-                                                                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                                            >
-                                                                <Icon name="user-x" size={16} />
-                                                                Remove
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    {user.role === 'admin' ? (
+                                                        <span className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-800">Admin</span>
+                                                    ) : (
+                                                        <button onClick={() => removeStaff(user.username)} className="px-4 py-2 bg-red-600 text-white text-sm font-semibold hover:bg-red-700">
+                                                            Remove
+                                                        </button>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-
-                                    {/* System Stats */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6`}>
                                             <div className="flex items-center gap-3 mb-2">
                                                 <Icon name="users" className={darkMode ? 'text-blue-400' : 'text-blue-600'} size={24} />
-                                                <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Total Users</h3>
+                                                <h3 className={`text-base md:text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Total Users</h3>
                                             </div>
-                                            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{users.length}</p>
+                                            <p className={`text-2xl md:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{users.length}</p>
                                         </div>
-
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6`}>
                                             <div className="flex items-center gap-3 mb-2">
                                                 <Icon name="ticket" className={darkMode ? 'text-green-400' : 'text-green-600'} size={24} />
-                                                <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Total Tickets</h3>
+                                                <h3 className={`text-base md:text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Total Tickets</h3>
                                             </div>
-                                            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{tickets.length + completedTickets.length}</p>
+                                            <p className={`text-2xl md:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{tickets.length + completedTickets.length}</p>
                                         </div>
-
-                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6`}>
                                             <div className="flex items-center gap-3 mb-2">
                                                 <Icon name="file-text" className={darkMode ? 'text-purple-400' : 'text-purple-600'} size={24} />
-                                                <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Total Invoices</h3>
+                                                <h3 className={`text-base md:text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Total Invoices</h3>
                                             </div>
-                                            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{invoices.length + invoiceRecycleBin.length}</p>
+                                            <p className={`text-2xl md:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{invoices.length + invoiceRecycleBin.length}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1080,36 +654,25 @@
                             {/* Settings View */}
                             {currentView === 'settings' && (
                                 <div>
-                                    <h2 className={`text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Settings</h2>
-                                    
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 mb-6`}>
-                                        <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Theme</h3>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Settings</h2>
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6 mb-6`}>
+                                        <h3 className={`text-lg md:text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Theme</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                                             {Object.keys(themes).map(t => (
-                                                <button
-                                                    key={t}
-                                                    onClick={() => setTheme(t)}
-                                                    className={`p-4 rounded-xl border-2 transition-all ${
-                                                        theme === t
-                                                            ? 'border-blue-500 shadow-lg'
-                                                            : darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                                >
-                                                    <div className={`h-12 rounded-lg bg-gradient-to-r ${themes[t].gradient} mb-2`}></div>
-                                                    <p className={`text-sm font-medium capitalize ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t}</p>
+                                                <button key={t} onClick={() => setTheme(t)}
+                                                    className={`p-3 md:p-4 border-2 transition-all ${
+                                                        theme === t ? 'border-blue-500 shadow-lg' : darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-gray-300'
+                                                    }`}>
+                                                    <div className={`h-12 bg-gradient-to-r ${themes[t][darkMode ? 'dark' : 'light'].gradient} mb-2`}></div>
+                                                    <p className={`text-xs md:text-sm font-medium capitalize ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t}</p>
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
-
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-                                        <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Dark Mode</h3>
-                                        <button
-                                            onClick={() => setDarkMode(!darkMode)}
-                                            className={`flex items-center gap-3 px-6 py-3 rounded-xl ${
-                                                darkMode ? 'bg-yellow-500 text-gray-900' : 'bg-gray-900 text-white'
-                                            } font-semibold shadow-lg hover:shadow-xl transition-all`}
-                                        >
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg p-4 md:p-6`}>
+                                        <h3 className={`text-lg md:text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Display Mode</h3>
+                                        <button onClick={() => setDarkMode(!darkMode)}
+                                            className={`flex items-center gap-3 px-4 md:px-6 py-3 ${darkMode ? 'bg-yellow-500 text-gray-900' : 'bg-gray-900 text-white'} font-semibold shadow-lg hover:shadow-xl transition-all`}>
                                             <Icon name={darkMode ? 'sun' : 'moon'} size={20} />
                                             {darkMode ? 'Light Mode' : 'Dark Mode'}
                                         </button>
@@ -1117,277 +680,129 @@
                                 </div>
                             )}
 
-                            {/* Ticket Details Modal */}
-                            {showTicketDetails && selectedTicket && (
-                                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto`}>
-                                        <div className="flex justify-between items-start mb-4">
-                                            <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Ticket Details</h3>
-                                            <button
-                                                onClick={() => setShowTicketDetails(false)}
-                                                className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                                            >
-                                                <Icon name="x" size={24} />
-                                            </button>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Client</label>
-                                                <p className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{selectedTicket.client}</p>
-                                            </div>
-
-                                            <div>
-                                                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Issue</label>
-                                                <p className={`text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>{selectedTicket.issue}</p>
-                                            </div>
-
-                                            <div>
-                                                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Description</label>
-                                                <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{selectedTicket.description}</p>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Priority</label>
-                                                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                                                        selectedTicket.priority === 'high' ? 'bg-red-100 text-red-800' :
-                                                        selectedTicket.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-green-100 text-green-800'
-                                                    }`}>
-                                                        {selectedTicket.priority}
-                                                    </span>
-                                                </div>
-
-                                                <div>
-                                                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Urgency</label>
-                                                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                                                        selectedTicket.urgency === 'high' ? 'bg-red-100 text-red-800' :
-                                                        selectedTicket.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-green-100 text-green-800'
-                                                    }`}>
-                                                        {selectedTicket.urgency}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Assigned To</label>
-                                                    <p className={`${darkMode ? 'text-white' : 'text-gray-900'}`}>{selectedTicket.assignedTo}</p>
-                                                </div>
-
-                                                <div>
-                                                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Deadline</label>
-                                                    <p className={`${darkMode ? 'text-white' : 'text-gray-900'}`}>{selectedTicket.deadline}</p>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Date Sent</label>
-                                                <p className={`${darkMode ? 'text-white' : 'text-gray-900'}`}>{selectedTicket.dateSent}</p>
-                                            </div>
-
-                                            <div className="flex gap-3 pt-4 border-t border-gray-200">
-                                                <button
-                                                    onClick={() => completeTicket(selectedTicket.id)}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-                                                >
-                                                    <Icon name="check-circle" size={20} />
-                                                    Mark as Complete
-                                                </button>
-                                                <button
-                                                    onClick={() => setShowTicketDetails(false)}
-                                                    className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-3 rounded-lg font-semibold`}
-                                                >
-                                                    Close
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* New Ticket Modal */}
+                            {/* Modals */}
                             {showNewTicket && (
                                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-md`}>
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 w-full max-w-md max-h-[90vh] overflow-y-auto`}>
                                         <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>New Ticket</h3>
                                         <div className="space-y-4">
-                                            <input
-                                                type="text"
-                                                placeholder="Client Name"
-                                                value={newTicket.client}
-                                                onChange={(e) => setNewTicket({ ...newTicket, client: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                            <input
-                                                type="text"
-                                                placeholder="Issue Summary"
-                                                value={newTicket.issue}
-                                                onChange={(e) => setNewTicket({ ...newTicket, issue: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                            <textarea
-                                                placeholder="Detailed Description"
-                                                value={newTicket.description}
+                                            <input type="text" placeholder="Customer" value={newTicket.customer} 
+                                                onChange={(e) => setNewTicket({ ...newTicket, customer: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <input type="text" placeholder="Task" value={newTicket.task} 
+                                                onChange={(e) => setNewTicket({ ...newTicket, task: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <textarea placeholder="Description" value={newTicket.description} 
                                                 onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                                rows="3"
-                                            />
-                                            <select
-                                                value={newTicket.priority}
-                                                onChange={(e) => setNewTicket({ ...newTicket, priority: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            >
-                                                <option value="low">Low Priority</option>
-                                                <option value="medium">Medium Priority</option>
-                                                <option value="high">High Priority</option>
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} rows="3" />
+                                            <select value={newTicket.urgency} onChange={(e) => setNewTicket({ ...newTicket, urgency: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}>
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
                                             </select>
-                                            <select
-                                                value={newTicket.assignedTo}
-                                                onChange={(e) => setNewTicket({ ...newTicket, assignedTo: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            >
-                                                {users.map(user => (
-                                                    <option key={user.username} value={user.username}>
-                                                        {user.name} ({user.role})
-                                                    </option>
-                                                ))}
+                                            <input type="text" placeholder="Location" value={newTicket.location} 
+                                                onChange={(e) => setNewTicket({ ...newTicket, location: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <select value={newTicket.assignedTo} onChange={(e) => setNewTicket({ ...newTicket, assignedTo: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}>
+                                                {users.map(user => <option key={user.username} value={user.username}>{user.name}</option>)}
                                             </select>
-                                            <input
-                                                type="date"
-                                                value={newTicket.deadline}
+                                            <input type="date" value={newTicket.deadline} 
                                                 onChange={(e) => setNewTicket({ ...newTicket, deadline: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={createTicket}
-                                                    className={`flex-1 bg-gradient-to-r ${currentTheme.gradient} text-white py-2 rounded-lg font-semibold`}
-                                                >
-                                                    Create
-                                                </button>
-                                                <button
-                                                    onClick={() => setShowNewTicket(false)}
-                                                    className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-2 rounded-lg`}
-                                                >
-                                                    Cancel
-                                                </button>
+                                                <button onClick={createTicket} className={`flex-1 bg-gradient-to-r ${currentTheme.gradient} text-white py-2 font-semibold`}>Create</button>
+                                                <button onClick={() => setShowNewTicket(false)} className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-2`}>Cancel</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* New Invoice Modal */}
+                            {showEditModal && editingTicket && (
+                                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 w-full max-w-md max-h-[90vh] overflow-y-auto`}>
+                                        <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Edit Ticket</h3>
+                                        <div className="space-y-4">
+                                            <input type="text" value={editingTicket.customer} 
+                                                onChange={(e) => setEditingTicket({ ...editingTicket, customer: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <input type="text" value={editingTicket.task} 
+                                                onChange={(e) => setEditingTicket({ ...editingTicket, task: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <textarea value={editingTicket.description} 
+                                                onChange={(e) => setEditingTicket({ ...editingTicket, description: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} rows="3" />
+                                            <select value={editingTicket.urgency} onChange={(e) => setEditingTicket({ ...editingTicket, urgency: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}>
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                            </select>
+                                            <input type="text" value={editingTicket.location} 
+                                                onChange={(e) => setEditingTicket({ ...editingTicket, location: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <input type="date" value={editingTicket.deadline} 
+                                                onChange={(e) => setEditingTicket({ ...editingTicket, deadline: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <div className="flex gap-2">
+                                                <button onClick={updateTicket} className={`flex-1 bg-gradient-to-r ${currentTheme.gradient} text-white py-2 font-semibold`}>Update</button>
+                                                <button onClick={() => setShowEditModal(false)} className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-2`}>Cancel</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {showNewInvoice && (
                                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-md`}>
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 w-full max-w-md`}>
                                         <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>New Invoice</h3>
                                         <div className="space-y-4">
-                                            <input
-                                                type="text"
-                                                placeholder="Client Name"
-                                                value={newInvoice.client}
+                                            <input type="text" placeholder="Client" value={newInvoice.client} 
                                                 onChange={(e) => setNewInvoice({ ...newInvoice, client: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                            <textarea
-                                                placeholder="Description"
-                                                value={newInvoice.description}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <textarea placeholder="Description" value={newInvoice.description} 
                                                 onChange={(e) => setNewInvoice({ ...newInvoice, description: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                                rows="3"
-                                            />
-                                            <input
-                                                type="number"
-                                                placeholder="Amount"
-                                                value={newInvoice.amount}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} rows="3" />
+                                            <input type="number" placeholder="Amount" value={newInvoice.amount} 
                                                 onChange={(e) => setNewInvoice({ ...newInvoice, amount: parseFloat(e.target.value) || 0 })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                            <input
-                                                type="date"
-                                                value={newInvoice.date}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <input type="date" value={newInvoice.date} 
                                                 onChange={(e) => setNewInvoice({ ...newInvoice, date: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={createInvoice}
-                                                    className={`flex-1 bg-gradient-to-r ${currentTheme.gradient} text-white py-2 rounded-lg font-semibold`}
-                                                >
-                                                    Create
-                                                </button>
-                                                <button
-                                                    onClick={() => setShowNewInvoice(false)}
-                                                    className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-2 rounded-lg`}
-                                                >
-                                                    Cancel
-                                                </button>
+                                                <button onClick={createInvoice} className={`flex-1 bg-gradient-to-r ${currentTheme.gradient} text-white py-2 font-semibold`}>Create</button>
+                                                <button onClick={() => setShowNewInvoice(false)} className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-2`}>Cancel</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Add Staff Modal */}
                             {showAddStaff && (
                                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-md`}>
-                                        <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Add Staff Member</h3>
-                                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
-                                            This will create a staff member AND a login account for them.
-                                        </p>
+                                    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 w-full max-w-md`}>
+                                        <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Add Staff</h3>
                                         <div className="space-y-4">
-                                            <input
-                                                type="text"
-                                                placeholder="Full Name (e.g., John Smith)"
-                                                value={newStaff.name}
+                                            <input type="text" placeholder="Full Name" value={newStaff.name} 
                                                 onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                            <input
-                                                type="text"
-                                                placeholder="Username (e.g., jsmith)"
-                                                value={newStaff.username}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <input type="text" placeholder="Username" value={newStaff.username} 
                                                 onChange={(e) => setNewStaff({ ...newStaff, username: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                            <input
-                                                type="password"
-                                                placeholder="Password"
-                                                value={newStaff.password}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <input type="password" placeholder="Password" value={newStaff.password} 
                                                 onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            />
-                                            <select
-                                                value={newStaff.role}
-                                                onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
-                                                className={`w-full px-4 py-2 border rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
-                                            >
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`} />
+                                            <select value={newStaff.role} onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+                                                className={`w-full px-4 py-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}>
                                                 <option value="staff">Staff</option>
                                                 <option value="admin">Admin</option>
                                             </select>
-                                            <div className={`p-3 ${darkMode ? 'bg-blue-900 border-blue-700' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
-                                                <p className={`text-sm ${darkMode ? 'text-blue-200' : 'text-blue-800'}`}>
-                                                    <strong>Note:</strong> After adding, they can login with their username and password.
-                                                </p>
-                                            </div>
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={addStaff}
-                                                    className={`flex-1 bg-gradient-to-r ${currentTheme.gradient} text-white py-2 rounded-lg font-semibold`}
-                                                >
-                                                    Create Staff & Account
-                                                </button>
-                                                <button
-                                                    onClick={() => setShowAddStaff(false)}
-                                                    className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-2 rounded-lg`}
-                                                >
-                                                    Cancel
-                                                </button>
+                                                <button onClick={addStaff} className={`flex-1 bg-gradient-to-r ${currentTheme.gradient} text-white py-2 font-semibold`}>Create</button>
+                                                <button onClick={() => setShowAddStaff(false)} className={`flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} py-2`}>Cancel</button>
                                             </div>
                                         </div>
                                     </div>
