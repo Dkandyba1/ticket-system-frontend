@@ -565,6 +565,127 @@
     <div id="root"></div>
     
     <script type="text/babel">
+        /*
+         * GENIUS TECH TICKETING SYSTEM
+         * CLIENT-READY VERSION - DATABASE INTEGRATION READY
+         * 
+         * DATABASE SCHEMA DOCUMENTATION
+         * =============================
+         * 
+         * TABLES NEEDED:
+         * 
+         * 1. users
+         *    - id (INT, PRIMARY KEY, AUTO_INCREMENT)
+         *    - username (VARCHAR(50), UNIQUE, NOT NULL)
+         *    - password (VARCHAR(255), HASHED, NOT NULL)
+         *    - role (ENUM: 'owner', 'admin', 'staff')
+         *    - firstName (VARCHAR(50))
+         *    - lastName (VARCHAR(50))
+         *    - name (VARCHAR(100), COMPUTED: firstName + lastName)
+         *    - createdAt (TIMESTAMP)
+         * 
+         * 2. tickets
+         *    - id (INT, PRIMARY KEY, AUTO_INCREMENT)
+         *    - client (VARCHAR(100), NOT NULL)
+         *    - task (TEXT, NOT NULL)
+         *    - deadline (DATE, NOT NULL)
+         *    - location (VARCHAR(100))
+         *    - urgency (ENUM: 'low', 'medium', 'high')
+         *    - assignedTo (INT, FOREIGN KEY → users.id)
+         *    - description (TEXT)
+         *    - created (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
+         *    - status (ENUM: 'active', 'completed', 'archived', 'deleted')
+         *    - resolution (TEXT)
+         *    - completedDate (TIMESTAMP)
+         *    - archivedDate (TIMESTAMP)
+         *    - deletedDate (TIMESTAMP)
+         * 
+         * 3. invoices
+         *    - id (INT, PRIMARY KEY, AUTO_INCREMENT)
+         *    - client (VARCHAR(100), NOT NULL)
+         *    - paymentTerms (ENUM: 'now', 'end_of_month')
+         *    - inQuickBooks (BOOLEAN, DEFAULT FALSE)
+         *    - paymentDeadline (DATE)
+         *    - contactName (VARCHAR(100))
+         *    - contactEmail (VARCHAR(100))
+         *    - contactPhone (VARCHAR(20))
+         *    - totalAmount (DECIMAL(10,2), NOT NULL)
+         *    - date (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
+         *    - paid (BOOLEAN, DEFAULT FALSE)
+         *    - paidDate (TIMESTAMP)
+         *    - status (ENUM: 'active', 'archived', 'deleted')
+         *    - archivedDate (TIMESTAMP)
+         *    - deletedDate (TIMESTAMP)
+         * 
+         * 4. invoice_sections
+         *    - id (INT, PRIMARY KEY, AUTO_INCREMENT)
+         *    - invoiceId (INT, FOREIGN KEY → invoices.id)
+         *    - description (TEXT)
+         *    - amount (DECIMAL(10,2))
+         *    - sortOrder (INT)
+         * 
+         * API ENDPOINTS NEEDED:
+         * ====================
+         * 
+         * Authentication:
+         * POST   /api/auth/login          - Login user
+         * POST   /api/auth/logout         - Logout user
+         * GET    /api/auth/session        - Get current session
+         * 
+         * Users:
+         * GET    /api/users               - Get all users (admin only)
+         * POST   /api/users               - Create user (admin only)
+         * PUT    /api/users/:id           - Update user
+         * DELETE /api/users/:id           - Delete user (owner only)
+         * 
+         * Tickets:
+         * GET    /api/tickets             - Get all tickets (filtered by user role)
+         * GET    /api/tickets/my          - Get my assigned tickets
+         * GET    /api/tickets/overdue     - Get overdue tickets
+         * GET    /api/tickets/completed   - Get completed tickets
+         * GET    /api/tickets/archived    - Get archived tickets
+         * POST   /api/tickets             - Create ticket
+         * PUT    /api/tickets/:id         - Update ticket
+         * PUT    /api/tickets/:id/complete - Complete ticket
+         * PUT    /api/tickets/:id/archive  - Archive ticket
+         * PUT    /api/tickets/:id/unarchive - Unarchive ticket
+         * DELETE /api/tickets/:id         - Soft delete ticket
+         * DELETE /api/tickets/:id/permanent - Permanent delete
+         * 
+         * Invoices:
+         * GET    /api/invoices            - Get all invoices
+         * GET    /api/invoices/paid       - Get paid invoices
+         * GET    /api/invoices/archived   - Get archived invoices
+         * POST   /api/invoices            - Create invoice (with sections)
+         * PUT    /api/invoices/:id        - Update invoice
+         * PUT    /api/invoices/:id/pay    - Mark invoice as paid
+         * PUT    /api/invoices/:id/archive - Archive invoice
+         * PUT    /api/invoices/:id/unarchive - Unarchive invoice
+         * DELETE /api/invoices/:id        - Soft delete invoice
+         * DELETE /api/invoices/:id/permanent - Permanent delete
+         * 
+         * Recycle Bin:
+         * GET    /api/recycle             - Get deleted items
+         * DELETE /api/recycle/:id         - Permanent delete
+         * DELETE /api/recycle             - Empty recycle bin
+         * 
+         * Analytics:
+         * GET    /api/analytics/tickets   - Get ticket statistics
+         * GET    /api/analytics/revenue   - Get revenue statistics
+         * GET    /api/analytics/monthly   - Get monthly data for charts
+         * 
+         * SECURITY NOTES:
+         * ==============
+         * - Use bcrypt for password hashing
+         * - Implement JWT tokens for authentication
+         * - Add rate limiting on API endpoints
+         * - Validate all inputs server-side
+         * - Use HTTPS in production
+         * - Implement CORS properly
+         * - Add SQL injection protection (use parameterized queries)
+         * - Implement role-based access control (RBAC)
+         */
+        
         const { useState, useEffect, useMemo } = React;
         
         const Icon = ({ name, size = 20 }) => {
@@ -643,12 +764,21 @@
             const [showAddStaff, setShowAddStaff] = useState(false);
             const [showEditUser, setShowEditUser] = useState(false);
             const [editingUser, setEditingUser] = useState(null);
+            const [showTicketDetail, setShowTicketDetail] = useState(false);
+            const [showInvoiceDetail, setShowInvoiceDetail] = useState(false);
+            const [viewingTicket, setViewingTicket] = useState(null);
+            const [viewingInvoice, setViewingInvoice] = useState(null);
+            const [showEditTicket, setShowEditTicket] = useState(false);
+            const [editingTicket, setEditingTicket] = useState(null);
+            const [editTicketForm, setEditTicketForm] = useState({
+                client: '', task: '', deadline: '', location: '', urgency: 'medium', assignedTo: '', description: ''
+            });
             
             const [newTicket, setNewTicket] = useState({
                 client: '', task: '', deadline: '', location: '', urgency: 'medium', assignedTo: '', description: ''
             });
             
-            const [invoiceSections, setInvoiceSections] = useState([{ description: '', amount: '' }]);
+            const [invoiceSections, setInvoiceSections] = useState([{ description: '', type: 'hourly', rate: '', hours: '', amount: '' }]);
             const [newInvoice, setNewInvoice] = useState({
                 client: '', paymentTerms: 'now', inQuickBooks: 'no', paymentDeadline: '', contactName: '', contactEmail: '', contactPhone: ''
             });
@@ -705,7 +835,7 @@
             
             const filteredInvoices = useMemo(() => {
                 return invoices.filter(inv =>
-                    inv.client.toLowerCase().includes(invoiceSearch.toLowerCase())
+                    !inv.paid && inv.client.toLowerCase().includes(invoiceSearch.toLowerCase())
                 );
             }, [invoices, invoiceSearch]);
             
@@ -718,8 +848,10 @@
             }, [tickets]);
             
             const paidInvoices = useMemo(() => {
-                return invoices.filter(inv => inv.paid);
-            }, [invoices]);
+                return invoices.filter(inv => 
+                    inv.paid && inv.client.toLowerCase().includes(invoiceSearch.toLowerCase())
+                );
+            }, [invoices, invoiceSearch]);
             
             const handleLogin = (e) => {
                 e.preventDefault();
@@ -805,6 +937,31 @@
                 }
             };
             
+            const openEditTicket = (ticket) => {
+                setEditingTicket(ticket);
+                setEditTicketForm({
+                    client: ticket.client,
+                    task: ticket.task,
+                    deadline: ticket.deadline,
+                    location: ticket.location || '',
+                    urgency: ticket.urgency,
+                    assignedTo: ticket.assignedTo || '',
+                    description: ticket.description || ''
+                });
+                setShowEditTicket(true);
+            };
+            
+            const updateTicket = () => {
+                if (editTicketForm.client && editTicketForm.task && editTicketForm.deadline) {
+                    setTickets(prev => prev.map(t => 
+                        t.id === editingTicket.id ? { ...t, ...editTicketForm } : t
+                    ));
+                    setShowEditTicket(false);
+                    setEditingTicket(null);
+                    setEditTicketForm({ client: '', task: '', deadline: '', location: '', urgency: 'medium', assignedTo: '', description: '' });
+                }
+            };
+            
             const completeTicket = () => {
                 if (selectedTicket && resolution.trim()) {
                     setCompletedTickets(prev => [...prev, {
@@ -851,7 +1008,7 @@
             };
             
             const addInvoiceSection = () => {
-                setInvoiceSections([...invoiceSections, { description: '', amount: '' }]);
+                setInvoiceSections([...invoiceSections, { description: '', type: 'hourly', rate: '', hours: '', amount: '' }]);
             };
             
             const removeInvoiceSection = (index) => {
@@ -866,7 +1023,13 @@
             
             const calculateInvoiceTotal = () => {
                 return invoiceSections.reduce((sum, section) => {
-                    return sum + (parseFloat(section.amount) || 0);
+                    if (section.type === 'hourly') {
+                        const rate = parseFloat(section.rate) || 0;
+                        const hours = parseFloat(section.hours) || 0;
+                        return sum + (rate * hours);
+                    } else {
+                        return sum + (parseFloat(section.amount) || 0);
+                    }
                 }, 0);
             };
             
@@ -883,10 +1046,10 @@
                         paidDate: null
                     }]);
                     setNewInvoice({ client: '', paymentTerms: 'now', inQuickBooks: 'no', paymentDeadline: '', contactName: '', contactEmail: '', contactPhone: '' });
-                    setInvoiceSections([{ description: '', amount: '' }]);
+                    setInvoiceSections([{ description: '', type: 'hourly', rate: '', hours: '', amount: '' }]);
                     setShowNewInvoice(false);
                 } else {
-                    alert('Please add client name and at least one section with amount');
+                    alert('Please add client name and at least one section with valid amount');
                 }
             };
             
@@ -1098,7 +1261,7 @@
                                 <div className={`nav-item ${currentView === 'invoices' ? 'active' : ''}`} onClick={() => setCurrentView('invoices')}>
                                     <Icon name="invoice" />
                                     Invoices
-                                    {invoices.length > 0 && <span className="nav-badge">{invoices.length}</span>}
+                                    {invoices.filter(inv => !inv.paid).length > 0 && <span className="nav-badge">{invoices.filter(inv => !inv.paid).length}</span>}
                                 </div>
                                 <div className={`nav-item ${currentView === 'paid' ? 'active' : ''}`} onClick={() => setCurrentView('paid')}>
                                     <Icon name="check" />
@@ -1339,6 +1502,12 @@
                                                         <td>{getStaffName(ticket.assignedTo)}</td>
                                                         <td>
                                                             <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button className="btn btn-sm btn-secondary" onClick={() => { setViewingTicket(ticket); setShowTicketDetail(true); }}>
+                                                                    <Icon name="search" size={16} />
+                                                                </button>
+                                                                <button className="btn btn-sm btn-secondary" onClick={() => openEditTicket(ticket)}>
+                                                                    <Icon name="edit" size={16} />
+                                                                </button>
                                                                 <button className="btn btn-sm btn-primary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
                                                                     <Icon name="check" size={16} />
                                                                 </button>
@@ -1399,9 +1568,14 @@
                                                             </td>
                                                             <td>{getStaffName(ticket.assignedTo)}</td>
                                                             <td>
-                                                                <button className="btn btn-sm btn-primary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
-                                                                    <Icon name="check" size={16} /> Complete Now
-                                                                </button>
+                                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                                    <button className="btn btn-sm btn-secondary" onClick={() => { setViewingTicket(ticket); setShowTicketDetail(true); }}>
+                                                                        <Icon name="search" size={16} />
+                                                                    </button>
+                                                                    <button className="btn btn-sm btn-primary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
+                                                                        <Icon name="check" size={16} />
+                                                                    </button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     );
@@ -1427,121 +1601,55 @@
                                             <p>No completed tickets yet</p>
                                         </div>
                                     ) : (
-                                        <div>
-                                            {completedTickets.map(ticket => {
-                                                const isExpanded = selectedTickets.includes(ticket.id);
-                                                return (
-                                                    <div key={ticket.id} style={{ marginBottom: '12px' }}>
-                                                        <div style={{
-                                                            padding: '16px',
-                                                            background: 'rgba(125, 211, 192, 0.04)',
-                                                            borderRadius: '12px',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s',
-                                                            border: '1px solid var(--border-color)'
-                                                        }}
-                                                        onClick={() => toggleTicketSelection(ticket.id)}>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <div style={{ flex: 1 }}>
-                                                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '8px' }}>
-                                                                        <span style={{ fontWeight: 700, fontSize: '16px' }}>{ticket.client}</span>
-                                                                        <span className={`badge badge-${ticket.urgency}`}>{ticket.urgency}</span>
-                                                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                                                            Completed: {ticket.completedDate}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                                                                        {ticket.task}
-                                                                    </div>
-                                                                </div>
-                                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                                    <button 
-                                                                        className="btn btn-sm btn-warning" 
-                                                                        onClick={(e) => { e.stopPropagation(); archiveTicket(ticket, true); }}
-                                                                    >
-                                                                        <Icon name="archive" size={16} />
-                                                                    </button>
-                                                                    <span style={{ fontSize: '20px', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                                                                        ▼
-                                                                    </span>
-                                                                </div>
+                                        <div style={{ display: 'grid', gap: '16px' }}>
+                                            {completedTickets.map(ticket => (
+                                                <div key={ticket.id} style={{
+                                                    padding: '20px',
+                                                    background: 'rgba(125, 211, 192, 0.04)',
+                                                    borderRadius: '12px',
+                                                    border: '1px solid var(--border-color)',
+                                                    transition: 'all 0.2s',
+                                                    cursor: 'pointer'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(125, 211, 192, 0.08)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(125, 211, 192, 0.04)'}
+                                                onClick={() => { setViewingTicket(ticket); setShowTicketDetail(true); }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
+                                                                <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>{ticket.client}</h3>
+                                                                <span className={`badge badge-${ticket.urgency}`}>{ticket.urgency}</span>
                                                             </div>
+                                                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>{ticket.task}</p>
                                                         </div>
-                                                        
-                                                        {isExpanded && (
-                                                            <div style={{
-                                                                padding: '20px',
-                                                                background: 'rgba(125, 211, 192, 0.08)',
-                                                                borderRadius: '0 0 12px 12px',
-                                                                marginTop: '-12px',
-                                                                paddingTop: '20px',
-                                                                border: '1px solid var(--border-color)',
-                                                                borderTop: 'none'
-                                                            }}>
-                                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '16px' }}>
-                                                                    <div>
-                                                                        <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                                                            Deadline
-                                                                        </div>
-                                                                        <div style={{ fontWeight: 500 }}>{ticket.deadline}</div>
-                                                                    </div>
-                                                                    <div>
-                                                                        <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                                                            Assigned To
-                                                                        </div>
-                                                                        <div style={{ fontWeight: 500 }}>{getStaffName(ticket.assignedTo)}</div>
-                                                                    </div>
-                                                                    <div>
-                                                                        <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                                                            Location
-                                                                        </div>
-                                                                        <div style={{ fontWeight: 500 }}>{ticket.location || 'N/A'}</div>
-                                                                    </div>
-                                                                    <div>
-                                                                        <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                                                            Created
-                                                                        </div>
-                                                                        <div style={{ fontWeight: 500 }}>{ticket.created}</div>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                {ticket.description && (
-                                                                    <div style={{ marginBottom: '16px' }}>
-                                                                        <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                                                                            Description
-                                                                        </div>
-                                                                        <div style={{ 
-                                                                            padding: '12px', 
-                                                                            background: 'var(--bg-secondary)', 
-                                                                            borderRadius: '8px',
-                                                                            fontSize: '14px',
-                                                                            lineHeight: '1.6'
-                                                                        }}>
-                                                                            {ticket.description}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                <div>
-                                                                    <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--mint-500)', marginBottom: '8px' }}>
-                                                                        Resolution
-                                                                    </div>
-                                                                    <div style={{ 
-                                                                        padding: '16px', 
-                                                                        background: 'rgba(125, 211, 192, 0.1)', 
-                                                                        borderRadius: '8px',
-                                                                        fontSize: '14px',
-                                                                        lineHeight: '1.6',
-                                                                        borderLeft: '4px solid var(--mint-500)'
-                                                                    }}>
-                                                                        {ticket.resolution}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                                            <button 
+                                                                className="btn btn-sm btn-warning" 
+                                                                onClick={(e) => { e.stopPropagation(); archiveTicket(ticket, true); }}
+                                                            >
+                                                                <Icon name="archive" size={16} />
+                                                            </button>
+                                                            <button 
+                                                                className="btn btn-sm btn-danger" 
+                                                                onClick={(e) => { 
+                                                                    e.stopPropagation(); 
+                                                                    if (confirm('Move to recycle bin?')) {
+                                                                        setRecycleBin(prev => [...prev, { ...ticket, type: 'ticket', deletedDate: new Date().toISOString().split('T')[0] }]);
+                                                                        setCompletedTickets(prev => prev.filter(t => t.id !== ticket.id));
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Icon name="trash" size={16} />
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                );
-                                            })}
+                                                    <div style={{ display: 'flex', gap: '20px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                        <span>Completed: {ticket.completedDate}</span>
+                                                        <span>Assigned: {getStaffName(ticket.assignedTo)}</span>
+                                                        <span style={{ color: 'var(--mint-500)', fontWeight: 600 }}>Click to view details</span>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </div>
@@ -1584,9 +1692,22 @@
                                                             </span>
                                                         </td>
                                                         <td>
-                                                            <button className="btn btn-sm btn-primary" onClick={() => unarchiveTicket(ticket)}>
-                                                                <Icon name="archive" size={16} /> Unarchive
-                                                            </button>
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button className="btn btn-sm btn-secondary" onClick={() => { setViewingTicket(ticket); setShowTicketDetail(true); }}>
+                                                                    <Icon name="search" size={16} />
+                                                                </button>
+                                                                <button className="btn btn-sm btn-primary" onClick={() => unarchiveTicket(ticket)}>
+                                                                    <Icon name="archive" size={16} />
+                                                                </button>
+                                                                <button className="btn btn-sm btn-danger" onClick={() => {
+                                                                    if (confirm('Move to recycle bin?')) {
+                                                                        setRecycleBin(prev => [...prev, { ...ticket, type: 'ticket', deletedDate: new Date().toISOString().split('T')[0] }]);
+                                                                        setArchivedTickets(prev => prev.filter(t => t.id !== ticket.id));
+                                                                    }
+                                                                }}>
+                                                                    <Icon name="trash" size={16} />
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1686,12 +1807,14 @@
                                                         <td>{invoice.paid ? invoice.paidDate : '-'}</td>
                                                         <td>
                                                             <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button className="btn btn-sm btn-secondary" onClick={() => { setViewingInvoice(invoice); setShowInvoiceDetail(true); }}>
+                                                                    <Icon name="search" size={16} />
+                                                                </button>
                                                                 <button 
                                                                     className={`btn btn-sm ${invoice.paid ? 'btn-secondary' : 'btn-primary'}`}
                                                                     onClick={() => togglePaid(invoice.id)}
                                                                 >
                                                                     <Icon name={invoice.paid ? 'x' : 'check'} size={16} />
-                                                                    {invoice.paid ? 'Unpay' : 'Pay'}
                                                                 </button>
                                                                 <button className="btn btn-sm btn-warning" onClick={() => archiveInvoice(invoice)}>
                                                                     <Icon name="archive" size={16} />
@@ -1748,9 +1871,22 @@
                                                             </span>
                                                         </td>
                                                         <td>
-                                                            <button className="btn btn-sm btn-primary" onClick={() => unarchiveInvoice(invoice)}>
-                                                                <Icon name="archive" size={16} /> Unarchive
-                                                            </button>
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button className="btn btn-sm btn-secondary" onClick={() => { setViewingInvoice(invoice); setShowInvoiceDetail(true); }}>
+                                                                    <Icon name="search" size={16} />
+                                                                </button>
+                                                                <button className="btn btn-sm btn-primary" onClick={() => unarchiveInvoice(invoice)}>
+                                                                    <Icon name="archive" size={16} />
+                                                                </button>
+                                                                <button className="btn btn-sm btn-danger" onClick={() => {
+                                                                    if (confirm('Move to recycle bin?')) {
+                                                                        setRecycleBin(prev => [...prev, { ...invoice, type: 'invoice', deletedDate: new Date().toISOString().split('T')[0] }]);
+                                                                        setArchivedInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
+                                                                    }
+                                                                }}>
+                                                                    <Icon name="trash" size={16} />
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1801,6 +1937,9 @@
                                                         </td>
                                                         <td>
                                                             <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button className="btn btn-sm btn-secondary" onClick={() => { setViewingInvoice(invoice); setShowInvoiceDetail(true); }}>
+                                                                    <Icon name="search" size={16} />
+                                                                </button>
                                                                 <button className="btn btn-sm btn-warning" onClick={() => archiveInvoice(invoice)}>
                                                                     <Icon name="archive" size={16} />
                                                                 </button>
@@ -1914,9 +2053,17 @@
                                                             </span>
                                                         </td>
                                                         <td>
-                                                            <button className="btn btn-sm btn-primary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
-                                                                <Icon name="check" size={16} /> Complete
-                                                            </button>
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button className="btn btn-sm btn-secondary" onClick={() => { setViewingTicket(ticket); setShowTicketDetail(true); }}>
+                                                                    <Icon name="search" size={16} />
+                                                                </button>
+                                                                <button className="btn btn-sm btn-secondary" onClick={() => openEditTicket(ticket)}>
+                                                                    <Icon name="edit" size={16} />
+                                                                </button>
+                                                                <button className="btn btn-sm btn-primary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
+                                                                    <Icon name="check" size={16} />
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1930,8 +2077,23 @@
                         {currentView === 'recycle' && (
                             <div className="content-wrapper">
                                 <div className="page-header">
-                                    <h1 className="page-title">Recycle Bin</h1>
-                                    <p className="page-subtitle">Deleted items</p>
+                                    <div>
+                                        <h1 className="page-title">Recycle Bin</h1>
+                                        <p className="page-subtitle">Deleted items</p>
+                                    </div>
+                                    {recycleBin.length > 0 && (
+                                        <button 
+                                            className="btn btn-danger" 
+                                            onClick={() => {
+                                                if (confirm('Permanently delete ALL items? This cannot be undone!')) {
+                                                    setRecycleBin([]);
+                                                }
+                                            }}
+                                        >
+                                            <Icon name="trash" />
+                                            Empty Recycle Bin
+                                        </button>
+                                    )}
                                 </div>
                                 
                                 <div className="glass-card">
@@ -1947,6 +2109,7 @@
                                                     <th>Type</th>
                                                     <th>Name</th>
                                                     <th>Deleted Date</th>
+                                                    <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1959,6 +2122,18 @@
                                                         </td>
                                                         <td style={{ fontWeight: 600 }}>{item.client}</td>
                                                         <td>{item.deletedDate}</td>
+                                                        <td>
+                                                            <button 
+                                                                className="btn btn-sm btn-danger" 
+                                                                onClick={() => {
+                                                                    if (confirm('Permanently delete this item? This cannot be undone!')) {
+                                                                        setRecycleBin(prev => prev.filter((_, i) => i !== idx));
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Icon name="x" size={16} /> Delete Forever
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -2132,29 +2307,73 @@
                                         <label className="form-label">Invoice Sections</label>
                                         <div className="invoice-sections">
                                             {invoiceSections.map((section, idx) => (
-                                                <div key={idx} className="section-item">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Description"
-                                                        value={section.description}
-                                                        onChange={(e) => updateInvoiceSection(idx, 'description', e.target.value)}
-                                                    />
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        placeholder="£0.00"
-                                                        value={section.amount}
-                                                        onChange={(e) => updateInvoiceSection(idx, 'amount', e.target.value)}
-                                                        style={{ width: '150px' }}
-                                                    />
-                                                    {invoiceSections.length > 1 && (
-                                                        <button 
-                                                            className="btn btn-sm btn-danger" 
-                                                            onClick={() => removeInvoiceSection(idx)}
-                                                            type="button"
+                                                <div key={idx} style={{ marginBottom: '16px', padding: '16px', background: 'rgba(125, 211, 192, 0.04)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                                                    <div className="section-item" style={{ marginBottom: '12px' }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Description (e.g. Server Setup, RAM Upgrade)"
+                                                            value={section.description}
+                                                            onChange={(e) => updateInvoiceSection(idx, 'description', e.target.value)}
+                                                            style={{ flex: 2 }}
+                                                        />
+                                                        <select
+                                                            value={section.type}
+                                                            onChange={(e) => updateInvoiceSection(idx, 'type', e.target.value)}
+                                                            style={{ width: '140px' }}
                                                         >
-                                                            <Icon name="x" size={14} />
-                                                        </button>
+                                                            <option value="hourly">Hourly Rate</option>
+                                                            <option value="fixed">Fixed Charge</option>
+                                                        </select>
+                                                        {invoiceSections.length > 1 && (
+                                                            <button 
+                                                                className="btn btn-sm btn-danger" 
+                                                                onClick={() => removeInvoiceSection(idx)}
+                                                                type="button"
+                                                            >
+                                                                <Icon name="x" size={14} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {section.type === 'hourly' ? (
+                                                        <div className="section-item">
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                placeholder="Rate (£/hr)"
+                                                                value={section.rate}
+                                                                onChange={(e) => updateInvoiceSection(idx, 'rate', e.target.value)}
+                                                                style={{ width: '110px' }}
+                                                            />
+                                                            <span style={{ padding: '0 8px', color: 'var(--text-secondary)', fontWeight: 600 }}>×</span>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                placeholder="Hours"
+                                                                value={section.hours}
+                                                                onChange={(e) => updateInvoiceSection(idx, 'hours', e.target.value)}
+                                                                style={{ width: '100px' }}
+                                                            />
+                                                            <span style={{ padding: '0 8px', color: 'var(--text-secondary)', fontWeight: 600 }}>=</span>
+                                                            <span style={{ fontWeight: 700, color: 'var(--peach-500)', minWidth: '100px', fontSize: '16px' }}>
+                                                                £{((parseFloat(section.rate) || 0) * (parseFloat(section.hours) || 0)).toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="section-item">
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                placeholder="Amount (£)"
+                                                                value={section.amount}
+                                                                onChange={(e) => updateInvoiceSection(idx, 'amount', e.target.value)}
+                                                                style={{ width: '150px' }}
+                                                            />
+                                                            <span style={{ padding: '0 8px', color: 'var(--text-secondary)', fontWeight: 600 }}>=</span>
+                                                            <span style={{ fontWeight: 700, color: 'var(--peach-500)', minWidth: '100px', fontSize: '16px' }}>
+                                                                £{(parseFloat(section.amount) || 0).toFixed(2)}
+                                                            </span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ))}
@@ -2365,6 +2584,332 @@
                                     </button>
                                     <button className="btn btn-secondary" onClick={() => setShowAddStaff(false)}>
                                         Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {showEditTicket && editingTicket && (
+                        <div className="modal-overlay" onClick={() => setShowEditTicket(false)}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h2 className="modal-title">Edit Ticket</h2>
+                                    <button onClick={() => setShowEditTicket(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                        <Icon name="x" size={24} />
+                                    </button>
+                                </div>
+                                
+                                <div className="form-grid">
+                                    <div>
+                                        <label className="form-label">Client Name *</label>
+                                        <input type="text" value={editTicketForm.client} onChange={(e) => setEditTicketForm({ ...editTicketForm, client: e.target.value })} required />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="form-label">Task Description *</label>
+                                        <input type="text" value={editTicketForm.task} onChange={(e) => setEditTicketForm({ ...editTicketForm, task: e.target.value })} required />
+                                    </div>
+                                    
+                                    <div className="form-row">
+                                        <div>
+                                            <label className="form-label">Deadline *</label>
+                                            <input type="date" value={editTicketForm.deadline} onChange={(e) => setEditTicketForm({ ...editTicketForm, deadline: e.target.value })} required />
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="form-label">Location</label>
+                                            <input type="text" value={editTicketForm.location} onChange={(e) => setEditTicketForm({ ...editTicketForm, location: e.target.value })} />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="form-row">
+                                        <div>
+                                            <label className="form-label">Urgency</label>
+                                            <select value={editTicketForm.urgency} onChange={(e) => setEditTicketForm({ ...editTicketForm, urgency: e.target.value })}>
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="form-label">Assign To</label>
+                                            <select value={editTicketForm.assignedTo} onChange={(e) => setEditTicketForm({ ...editTicketForm, assignedTo: e.target.value })}>
+                                                <option value="">Unassigned</option>
+                                                {users.filter(u => u.role !== 'owner').map(user => (
+                                                    <option key={user.id} value={user.username}>{user.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="form-label">Description</label>
+                                        <textarea rows="4" value={editTicketForm.description} onChange={(e) => setEditTicketForm({ ...editTicketForm, description: e.target.value })} />
+                                    </div>
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                                    <button className="btn btn-primary" onClick={updateTicket} style={{ flex: 1, justifyContent: 'center' }}>
+                                        Update Ticket
+                                    </button>
+                                    <button className="btn btn-secondary" onClick={() => setShowEditTicket(false)}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {showTicketDetail && viewingTicket && (
+                        <div className="modal-overlay" onClick={() => setShowTicketDetail(false)}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+                                <div className="modal-header">
+                                    <h2 className="modal-title">Ticket Details</h2>
+                                    <button onClick={() => setShowTicketDetail(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                        <Icon name="x" size={24} />
+                                    </button>
+                                </div>
+                                
+                                <div style={{ marginBottom: '24px' }}>
+                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
+                                        <h3 style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>{viewingTicket.client}</h3>
+                                        <span className={`badge badge-${viewingTicket.urgency}`}>{viewingTicket.urgency}</span>
+                                        {viewingTicket.completedDate && (
+                                            <span className="badge badge-low">Completed</span>
+                                        )}
+                                    </div>
+                                    
+                                    <div style={{ fontSize: '16px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                                        {viewingTicket.task}
+                                    </div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '20px' }}>
+                                        <div>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                                Deadline
+                                            </div>
+                                            <div style={{ fontSize: '15px', fontWeight: 600 }}>{viewingTicket.deadline}</div>
+                                        </div>
+                                        
+                                        <div>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                                Assigned To
+                                            </div>
+                                            <div style={{ fontSize: '15px', fontWeight: 600 }}>{getStaffName(viewingTicket.assignedTo)}</div>
+                                        </div>
+                                        
+                                        <div>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                                Location
+                                            </div>
+                                            <div style={{ fontSize: '15px', fontWeight: 600 }}>{viewingTicket.location || 'N/A'}</div>
+                                        </div>
+                                        
+                                        <div>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                                Created
+                                            </div>
+                                            <div style={{ fontSize: '15px', fontWeight: 600 }}>{viewingTicket.created}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    {viewingTicket.description && (
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '10px', letterSpacing: '0.5px' }}>
+                                                Description
+                                            </div>
+                                            <div style={{ 
+                                                padding: '16px', 
+                                                background: 'rgba(125, 211, 192, 0.05)', 
+                                                borderRadius: '12px',
+                                                fontSize: '14px',
+                                                lineHeight: '1.7',
+                                                border: '1px solid var(--border-color)'
+                                            }}>
+                                                {viewingTicket.description}
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {viewingTicket.resolution && (
+                                        <div>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--mint-500)', marginBottom: '10px', letterSpacing: '0.5px' }}>
+                                                ✓ Resolution
+                                            </div>
+                                            <div style={{ 
+                                                padding: '16px', 
+                                                background: 'rgba(125, 211, 192, 0.1)', 
+                                                borderRadius: '12px',
+                                                fontSize: '14px',
+                                                lineHeight: '1.7',
+                                                borderLeft: '4px solid var(--mint-500)'
+                                            }}>
+                                                {viewingTicket.resolution}
+                                            </div>
+                                            {viewingTicket.completedDate && (
+                                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                                                    Completed on {viewingTicket.completedDate}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button className="btn btn-secondary" onClick={() => setShowTicketDetail(false)}>
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {showInvoiceDetail && viewingInvoice && (
+                        <div className="modal-overlay" onClick={() => setShowInvoiceDetail(false)}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+                                <div className="modal-header">
+                                    <h2 className="modal-title">Invoice Details</h2>
+                                    <button onClick={() => setShowInvoiceDetail(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                        <Icon name="x" size={24} />
+                                    </button>
+                                </div>
+                                
+                                <div style={{ marginBottom: '24px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 8px 0' }}>{viewingInvoice.client}</h3>
+                                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                Invoice Date: {viewingInvoice.date}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            {viewingInvoice.paid ? (
+                                                <span className="badge badge-low" style={{ fontSize: '14px', padding: '8px 16px' }}>PAID</span>
+                                            ) : (
+                                                <span className="badge badge-medium" style={{ fontSize: '14px', padding: '8px 16px' }}>UNPAID</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '24px' }}>
+                                        <div>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                                Payment Terms
+                                            </div>
+                                            <div style={{ fontSize: '15px', fontWeight: 600 }}>
+                                                {viewingInvoice.paymentTerms === 'now' ? 'Pay Now' : 'End of Month'}
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                                In QuickBooks
+                                            </div>
+                                            <div style={{ fontSize: '15px', fontWeight: 600 }}>
+                                                {viewingInvoice.inQuickBooks === 'yes' ? 'Yes' : 'No'}
+                                            </div>
+                                        </div>
+                                        
+                                        {viewingInvoice.paid && (
+                                            <div>
+                                                <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px', letterSpacing: '0.5px' }}>
+                                                    Paid Date
+                                                </div>
+                                                <div style={{ fontSize: '15px', fontWeight: 600 }}>{viewingInvoice.paidDate}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div style={{ marginBottom: '20px' }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '12px', letterSpacing: '0.5px' }}>
+                                            Line Items
+                                        </div>
+                                        <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                                            {viewingInvoice.sections && viewingInvoice.sections.map((section, idx) => {
+                                                let amount = 0;
+                                                let displayType = '';
+                                                
+                                                if (section.type === 'hourly' || (section.rate && section.hours)) {
+                                                    amount = (parseFloat(section.rate) || 0) * (parseFloat(section.hours) || 0);
+                                                    displayType = 'hourly';
+                                                } else {
+                                                    amount = parseFloat(section.amount) || 0;
+                                                    displayType = 'fixed';
+                                                }
+                                                
+                                                return (
+                                                    <div key={idx} style={{ 
+                                                        padding: '16px', 
+                                                        display: 'flex', 
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        background: idx % 2 === 0 ? 'rgba(125, 211, 192, 0.02)' : 'transparent',
+                                                        borderBottom: idx < viewingInvoice.sections.length - 1 ? '1px solid var(--border-color)' : 'none'
+                                                    }}>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ fontWeight: 600, marginBottom: '4px' }}>{section.description}</div>
+                                                            {displayType === 'hourly' && (
+                                                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                                    Hourly Rate: £{parseFloat(section.rate).toFixed(2)}/hr × {parseFloat(section.hours).toFixed(1)}h
+                                                                </div>
+                                                            )}
+                                                            {displayType === 'fixed' && (
+                                                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                                    Fixed Charge
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div style={{ textAlign: 'right' }}>
+                                                            <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--peach-500)' }}>
+                                                                £{amount.toFixed(2)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            <div style={{ 
+                                                padding: '16px', 
+                                                display: 'flex', 
+                                                justifyContent: 'space-between',
+                                                background: 'rgba(255, 180, 162, 0.1)',
+                                                borderTop: '2px solid var(--peach-500)'
+                                            }}>
+                                                <span style={{ fontWeight: 700, fontSize: '16px' }}>Total</span>
+                                                <span style={{ fontWeight: 700, fontSize: '20px', color: 'var(--peach-500)' }}>
+                                                    £{parseFloat(viewingInvoice.totalAmount || 0).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {(viewingInvoice.contactName || viewingInvoice.contactEmail || viewingInvoice.contactPhone) && (
+                                        <div style={{ 
+                                            padding: '16px', 
+                                            background: 'rgba(125, 211, 192, 0.05)', 
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--border-color)'
+                                        }}>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '10px', letterSpacing: '0.5px' }}>
+                                                Contact Information
+                                            </div>
+                                            {viewingInvoice.contactName && (
+                                                <div style={{ marginBottom: '4px', fontSize: '14px' }}><strong>Name:</strong> {viewingInvoice.contactName}</div>
+                                            )}
+                                            {viewingInvoice.contactEmail && (
+                                                <div style={{ marginBottom: '4px', fontSize: '14px' }}><strong>Email:</strong> {viewingInvoice.contactEmail}</div>
+                                            )}
+                                            {viewingInvoice.contactPhone && (
+                                                <div style={{ fontSize: '14px' }}><strong>Phone:</strong> {viewingInvoice.contactPhone}</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button className="btn btn-secondary" onClick={() => setShowInvoiceDetail(false)}>
+                                        Close
                                     </button>
                                 </div>
                             </div>
