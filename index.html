@@ -28,6 +28,9 @@
             --peach-500: #ffb4a2;
             --coral-500: #ff8b94;
             --sky-500: #6eb5ff;
+            --logo-blue: #1a6fa1;
+            --logo-blue-light: #2d8cc8;
+            --logo-blue-dark: #0d5580;
         }
         
         body.light {
@@ -187,7 +190,7 @@
         }
         
         .logo img {
-            height: 50px;
+            height: 70px;
             width: auto;
             max-width: 100%;
             object-fit: contain;
@@ -235,12 +238,12 @@
         }
         
         .nav-item:hover {
-            background: rgba(125, 211, 192, 0.1);
+            background: rgba(26, 111, 161, 0.1);
         }
         
         .nav-item.active {
-            background: linear-gradient(135deg, #7dd3c0 0%, #6eb5ff 100%);
-            color: #0f1419;
+            background: linear-gradient(135deg, var(--logo-blue) 0%, var(--logo-blue-light) 100%);
+            color: #ffffff;
         }
         
         .nav-icon {
@@ -249,8 +252,8 @@
         
         .badge {
             margin-left: auto;
-            background: var(--mint-500);
-            color: #0f1419;
+            background: var(--logo-blue);
+            color: #ffffff;
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 12px;
@@ -258,7 +261,8 @@
         }
         
         .nav-item.active .badge {
-            background: rgba(15, 20, 25, 0.2);
+            background: rgba(255, 255, 255, 0.3);
+            color: #ffffff;
         }
         
         .sidebar-footer {
@@ -490,13 +494,13 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #7dd3c0 0%, #5a8ba0 100%);
+            background: linear-gradient(135deg, var(--logo-blue) 0%, var(--logo-blue-light) 100%);
             color: white;
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(125, 211, 192, 0.4);
+            box-shadow: 0 6px 20px rgba(26, 111, 161, 0.4);
         }
         
         .btn-secondary {
@@ -605,6 +609,7 @@
             font-size: 24px;
             font-weight: 700;
             font-family: 'Space Grotesk', sans-serif;
+            color: var(--text-primary);
         }
         
         .close-btn {
@@ -1014,7 +1019,10 @@
         function App() {
             const [currentUser, setCurrentUser] = useState(null);
             const [currentView, setCurrentView] = useState('dashboard');
-            const [darkMode, setDarkMode] = useState(true);
+            const [darkMode, setDarkMode] = useState(() => {
+                const saved = localStorage.getItem('darkMode');
+                return saved !== null ? saved === 'true' : true;
+            });
             const [loading, setLoading] = useState(false);
             const [alert, setAlert] = useState(null);
             const [loginForm, setLoginForm] = useState({ username: '', password: '' });
@@ -1055,7 +1063,7 @@
             });
             const [invoiceSections, setInvoiceSections] = useState([{ description: '', type: 'hourly', rate: '', hours: '', amount: '' }]);
             const [newInvoice, setNewInvoice] = useState({
-                client: '', paymentTerms: 'now', inQuickBooks: 'no', contactName: '', contactEmail: '', contactPhone: ''
+                client: '', paymentTerms: 'now', inQuickBooks: 'no', paymentDeadline: '', contactName: '', contactEmail: '', contactPhone: ''
             });
             const [newStaff, setNewStaff] = useState({
                 username: '', password: '', role: 'staff', firstName: '', lastName: ''
@@ -1137,6 +1145,7 @@
             // Toggle dark mode
             useEffect(() => {
                 document.body.className = darkMode ? 'dark' : 'light';
+                localStorage.setItem('darkMode', darkMode.toString());
             }, [darkMode]);
 
             // Check for existing session
@@ -1268,7 +1277,7 @@
                     });
                     showAlert('Invoice created successfully!');
                     setShowNewInvoice(false);
-                    setNewInvoice({ client: '', paymentTerms: 'now', inQuickBooks: 'no', contactName: '', contactEmail: '', contactPhone: '' });
+                    setNewInvoice({ client: '', paymentTerms: 'now', inQuickBooks: 'no', paymentDeadline: '', contactName: '', contactEmail: '', contactPhone: '' });
                     setInvoiceSections([{ description: '', type: 'hourly', rate: '', hours: '', amount: '' }]);
                     loadData();
                 } catch (error) {
@@ -1738,7 +1747,7 @@
                                                     <tr key={ticket.id}>
                                                         <td>{ticket.client}</td>
                                                         <td>{ticket.task}</td>
-                                                        <td>{ticket.deadline}</td>
+                                                        <td>{new Date(ticket.deadline).toLocaleDateString()}</td>
                                                         <td>
                                                             <span className={`urgency-badge urgency-${ticket.urgency}`}>
                                                                 {ticket.urgency}
@@ -1789,7 +1798,7 @@
                                                     <tr key={ticket.id}>
                                                         <td>{ticket.client}</td>
                                                         <td>{ticket.task}</td>
-                                                        <td>{ticket.deadline}</td>
+                                                        <td>{new Date(ticket.deadline).toLocaleDateString()}</td>
                                                         <td>
                                                             <span className={`urgency-badge urgency-${ticket.urgency}`}>
                                                                 {ticket.urgency}
@@ -2334,6 +2343,10 @@
                                         <option value="no">No</option>
                                         <option value="yes">Yes</option>
                                     </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Payment Deadline</label>
+                                    <input type="date" value={newInvoice.paymentDeadline} onChange={e => setNewInvoice({...newInvoice, paymentDeadline: e.target.value})} />
                                 </div>
                                 <div className="form-group">
                                     <label>Contact Name</label>
