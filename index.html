@@ -224,6 +224,30 @@
             border-top: 1px solid var(--border-color);
         }
         
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(125, 211, 192, 0.1);
+        }
+        
+        .theme-icon {
+            font-size: 20px;
+        }
+        
+        .theme-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
         .user-profile {
             display: flex;
             align-items: center;
@@ -568,6 +592,7 @@
             margin-bottom: 8px;
             font-weight: 600;
             font-size: 14px;
+            color: var(--text-primary);
         }
         
         input, select, textarea {
@@ -1409,8 +1434,8 @@
                         <div className="sidebar">
                             <div className="sidebar-header">
                                 <div className="logo">
-                                    <div className="logo-icon">⚡</div>
-                                    <div className="logo-text">Genius Tech</div>
+                                    <div className="logo-icon">🎯</div>
+                                    <div className="logo-text">GENIUS TECH</div>
                                 </div>
                             </div>
                             
@@ -1458,10 +1483,14 @@
                             </div>
                             
                             <div className="sidebar-footer">
+                                <div className="theme-toggle" onClick={() => setDarkMode(!darkMode)}>
+                                    <span className="theme-icon">{darkMode ? '☀️' : '🌙'}</span>
+                                    <span className="theme-text">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                                </div>
                                 <div className="user-profile" onClick={handleLogout}>
-                                    <div className="user-avatar">{currentUser.name.charAt(0)}</div>
+                                    <div className="user-avatar">{currentUser.name?.charAt(0) || '?'}</div>
                                     <div className="user-info">
-                                        <div className="user-name">{currentUser.name}</div>
+                                        <div className="user-name">{currentUser.name || 'User'}</div>
                                         <div className="user-role">{currentUser.role}</div>
                                     </div>
                                     <span>🚪</span>
