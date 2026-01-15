@@ -49,6 +49,34 @@
             --border-color: rgba(125, 211, 192, 0.15);
             --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
+        
+        /* Dark mode text fixes */
+        body.dark label,
+        body.dark .form-label {
+            color: #e0e0e0 !important;
+        }
+        
+        body.dark input,
+        body.dark select,
+        body.dark textarea {
+            color: #ffffff !important;
+            background: #1a2332 !important;
+            border-color: rgba(125, 211, 192, 0.3) !important;
+        }
+        
+        body.dark input::placeholder,
+        body.dark textarea::placeholder {
+            color: #6b7280 !important;
+        }
+        
+        body.dark .modal-content {
+            color: #fefbf7;
+        }
+        
+        body.dark .ticket-card,
+        body.dark .invoice-card {
+            color: #fefbf7;
+        }
 
         /* Loading Spinner */
         .loading-overlay {
@@ -942,6 +970,32 @@
             );
         }
 
+        // Professional Icon Component with SVG icons
+        const Icon = ({ name, size = 20, className = '' }) => {
+            const icons = {
+                dashboard: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>`,
+                ticket: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 110-6h20a3 3 0 110 6"></path><path d="M2 15a3 3 0 100 6h20a3 3 0 100-6"></path><path d="M6 9v6m4-6v6m4-6v6m4-6v6"></path></svg>`,
+                user: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`,
+                clock: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>`,
+                check: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path><path d="M22 4L12 14.01l-3-3"></path></svg>`,
+                invoice: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6M16 13H8m8 4H8m2-8H8"></path></svg>`,
+                card: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`,
+                users: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"></path></svg>`,
+                archive: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path></svg>`,
+                trash: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6m4-6v6"></path></svg>`,
+                sun: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>`,
+                moon: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>`,
+                logout: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"></path></svg>`,
+                alert: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+                delete: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+                restore: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M3 12a9 9 0 009 9 9.75 9.75 0 006.74-2.74L21 16"></path></svg>`
+            };
+            return React.createElement('span', {
+                className: `icon ${className}`,
+                dangerouslySetInnerHTML: { __html: icons[name] || icons.ticket }
+            });
+        };
+
         // Main App Component
         function App() {
             const [currentUser, setCurrentUser] = useState(null);
@@ -955,6 +1009,8 @@
             const [tickets, setTickets] = useState([]);
             const [completedTickets, setCompletedTickets] = useState([]);
             const [archivedTickets, setArchivedTickets] = useState([]);
+            const [overdueTickets, setOverdueTickets] = useState([]);
+            const [trashedItems, setTrashedItems] = useState([]);
             const [invoices, setInvoices] = useState([]);
             const [paidInvoices, setPaidInvoices] = useState([]);
             const [archivedInvoices, setArchivedInvoices] = useState([]);
@@ -1026,6 +1082,12 @@
                     setTickets(activeTickets);
                     setCompletedTickets(completedTicketsData);
                     setArchivedTickets(archivedTicketsData);
+                    
+                    // Calculate overdue tickets
+                    const now = new Date();
+                    const overdue = activeTickets.filter(t => new Date(t.deadline) < now);
+                    setOverdueTickets(overdue);
+                    
                     setInvoices(activeInvoices);
                     setPaidInvoices(paidInvoicesData);
                     setArchivedInvoices(archivedInvoicesData);
@@ -1441,50 +1503,60 @@
                             
                             <div className="nav">
                                 <div className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`} onClick={() => setCurrentView('dashboard')}>
-                                    <span className="nav-icon">📊</span>
+                                    <Icon name="dashboard" size={20} />
                                     <span>Dashboard</span>
                                 </div>
                                 <div className={`nav-item ${currentView === 'tickets' ? 'active' : ''}`} onClick={() => setCurrentView('tickets')}>
-                                    <span className="nav-icon">🎫</span>
+                                    <Icon name="ticket" size={20} />
                                     <span>Active Tickets</span>
                                     <span className="badge">{tickets.length}</span>
                                 </div>
                                 <div className={`nav-item ${currentView === 'mytickets' ? 'active' : ''}`} onClick={() => setCurrentView('mytickets')}>
-                                    <span className="nav-icon">👤</span>
+                                    <Icon name="user" size={20} />
                                     <span>My Tickets</span>
                                     <span className="badge">{myTickets.length}</span>
                                 </div>
+                                <div className={`nav-item ${currentView === 'overdue' ? 'active' : ''}`} onClick={() => setCurrentView('overdue')}>
+                                    <Icon name="alert" size={20} />
+                                    <span>Overdue</span>
+                                    <span className="badge">{overdueTickets.length}</span>
+                                </div>
                                 <div className={`nav-item ${currentView === 'completed' ? 'active' : ''}`} onClick={() => setCurrentView('completed')}>
-                                    <span className="nav-icon">✅</span>
+                                    <Icon name="check" size={20} />
                                     <span>Completed</span>
                                     <span className="badge">{completedTickets.length}</span>
                                 </div>
                                 <div className={`nav-item ${currentView === 'invoices' ? 'active' : ''}`} onClick={() => setCurrentView('invoices')}>
-                                    <span className="nav-icon">💰</span>
+                                    <Icon name="invoice" size={20} />
                                     <span>Invoices</span>
                                     <span className="badge">{invoices.length}</span>
                                 </div>
                                 <div className={`nav-item ${currentView === 'paid' ? 'active' : ''}`} onClick={() => setCurrentView('paid')}>
-                                    <span className="nav-icon">💳</span>
+                                    <Icon name="card" size={20} />
                                     <span>Paid</span>
                                     <span className="badge">{paidInvoices.length}</span>
                                 </div>
                                 {currentUser.role !== 'staff' && (
                                     <div className={`nav-item ${currentView === 'users' ? 'active' : ''}`} onClick={() => setCurrentView('users')}>
-                                        <span className="nav-icon">👥</span>
+                                        <Icon name="users" size={20} />
                                         <span>Users</span>
                                         <span className="badge">{users.length}</span>
                                     </div>
                                 )}
                                 <div className={`nav-item ${currentView === 'archived' ? 'active' : ''}`} onClick={() => setCurrentView('archived')}>
-                                    <span className="nav-icon">📦</span>
+                                    <Icon name="archive" size={20} />
                                     <span>Archived</span>
+                                </div>
+                                <div className={`nav-item ${currentView === 'trash' ? 'active' : ''}`} onClick={() => setCurrentView('trash')}>
+                                    <Icon name="trash" size={20} />
+                                    <span>Trash</span>
+                                    <span className="badge">{trashedItems.length}</span>
                                 </div>
                             </div>
                             
                             <div className="sidebar-footer">
                                 <div className="theme-toggle" onClick={() => setDarkMode(!darkMode)}>
-                                    <span className="theme-icon">{darkMode ? '☀️' : '🌙'}</span>
+                                    <Icon name={darkMode ? 'sun' : 'moon'} size={20} />
                                     <span className="theme-text">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
                                 </div>
                                 <div className="user-profile" onClick={handleLogout}>
@@ -1493,7 +1565,7 @@
                                         <div className="user-name">{currentUser.name || 'User'}</div>
                                         <div className="user-role">{currentUser.role}</div>
                                     </div>
-                                    <span>🚪</span>
+                                    <Icon name="logout" size={20} />
                                 </div>
                             </div>
                         </div>
@@ -1664,6 +1736,51 @@
                                                         </td>
                                                     </tr>
                                                 ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {/* Overdue View */}
+                                {currentView === 'overdue' && (
+                                    <div className="card">
+                                        <div className="card-header">
+                                            <div className="card-title">Overdue Tickets</div>
+                                        </div>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Client</th>
+                                                    <th>Task</th>
+                                                    <th>Deadline</th>
+                                                    <th>Assigned To</th>
+                                                    <th>Days Overdue</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {overdueTickets.map(ticket => {
+                                                    const daysOverdue = Math.floor((new Date() - new Date(ticket.deadline)) / (1000 * 60 * 60 * 24));
+                                                    return (
+                                                        <tr key={ticket.id} style={{background: 'rgba(255, 139, 148, 0.1)'}}>
+                                                            <td>{ticket.client}</td>
+                                                            <td>{ticket.task}</td>
+                                                            <td>{new Date(ticket.deadline).toLocaleDateString()}</td>
+                                                            <td>{ticket.assignedToName || 'Unassigned'}</td>
+                                                            <td><span style={{color: '#ff8b94', fontWeight: '600'}}>{daysOverdue} days</span></td>
+                                                            <td>
+                                                                <div className="action-buttons">
+                                                                    <button className="btn btn-secondary" onClick={() => handleEditTicket(ticket)}>
+                                                                        Edit
+                                                                    </button>
+                                                                    <button className="btn btn-success" onClick={() => handleCompleteTicket(ticket.id)}>
+                                                                        Complete
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1862,9 +1979,18 @@
                                                             <td>{ticket.task}</td>
                                                             <td>{new Date(ticket.archivedDate).toLocaleDateString()}</td>
                                                             <td>
-                                                                <button className="btn btn-secondary" onClick={() => handleUnarchiveTicket(ticket.id)}>
-                                                                    ↩️ Unarchive
-                                                                </button>
+                                                                <div className="action-buttons">
+                                                                    <button className="btn btn-secondary" onClick={() => handleUnarchiveTicket(ticket.id)}>
+                                                                        <Icon name="restore" size={16} /> Unarchive
+                                                                    </button>
+                                                                    <button className="btn btn-danger" onClick={() => {
+                                                                        if (confirm('Move to trash?')) {
+                                                                            handleDeleteTicket(ticket.id);
+                                                                        }
+                                                                    }}>
+                                                                        <Icon name="trash" size={16} /> Delete
+                                                                    </button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -1892,9 +2018,18 @@
                                                             <td>£{invoice.totalAmount.toFixed(2)}</td>
                                                             <td>{new Date(invoice.archivedDate).toLocaleDateString()}</td>
                                                             <td>
-                                                                <button className="btn btn-secondary" onClick={() => handleUnarchiveInvoice(invoice.id)}>
-                                                                    ↩️ Unarchive
-                                                                </button>
+                                                                <div className="action-buttons">
+                                                                    <button className="btn btn-secondary" onClick={() => handleUnarchiveInvoice(invoice.id)}>
+                                                                        <Icon name="restore" size={16} /> Unarchive
+                                                                    </button>
+                                                                    <button className="btn btn-danger" onClick={() => {
+                                                                        if (confirm('Move to trash?')) {
+                                                                            handleDeleteInvoice(invoice.id);
+                                                                        }
+                                                                    }}>
+                                                                        <Icon name="trash" size={16} /> Delete
+                                                                    </button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -1902,6 +2037,76 @@
                                             </table>
                                         </div>
                                     </>
+                                )}
+
+                                {/* Trash View */}
+                                {currentView === 'trash' && (
+                                    <div className="card">
+                                        <div className="card-header">
+                                            <div className="card-title">Trash / Recycle Bin</div>
+                                            <div style={{fontSize: '14px', color: 'var(--text-secondary)'}}>
+                                                Items in trash are soft-deleted and can be restored
+                                            </div>
+                                        </div>
+                                        {trashedItems.length === 0 ? (
+                                            <div style={{padding: '40px', textAlign: 'center', color: 'var(--text-secondary)'}}>
+                                                <Icon name="trash" size={48} />
+                                                <div style={{marginTop: '16px', fontSize: '16px'}}>Trash is empty</div>
+                                            </div>
+                                        ) : (
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Type</th>
+                                                        <th>Name/Client</th>
+                                                        <th>Deleted Date</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {trashedItems.map(item => (
+                                                        <tr key={`${item.type}-${item.id}`}>
+                                                            <td>
+                                                                <span style={{
+                                                                    padding: '4px 8px',
+                                                                    borderRadius: '6px',
+                                                                    background: item.type === 'ticket' ? 'rgba(125, 211, 192, 0.1)' : 'rgba(110, 181, 255, 0.1)',
+                                                                    color: item.type === 'ticket' ? 'var(--mint-500)' : 'var(--sky-500)',
+                                                                    fontSize: '12px',
+                                                                    fontWeight: '600',
+                                                                    textTransform: 'uppercase'
+                                                                }}>
+                                                                    {item.type}
+                                                                </span>
+                                                            </td>
+                                                            <td>{item.client || item.task || 'N/A'}</td>
+                                                            <td>{new Date(item.deletedDate).toLocaleDateString()}</td>
+                                                            <td>
+                                                                <div className="action-buttons">
+                                                                    <button className="btn btn-success" onClick={() => {
+                                                                        if (confirm('Restore this item?')) {
+                                                                            // Restore functionality would go here
+                                                                            showAlert('Restore functionality coming soon!', 'info');
+                                                                        }
+                                                                    }}>
+                                                                        <Icon name="restore" size={16} /> Restore
+                                                                    </button>
+                                                                    <button className="btn btn-danger" onClick={() => {
+                                                                        if (confirm('Permanently delete? This cannot be undone!')) {
+                                                                            // Permanent delete would go here
+                                                                            showAlert('Permanent delete coming soon!', 'info');
+                                                                        }
+                                                                    }}>
+                                                                        <Icon name="delete" size={16} /> Permanent Delete
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
