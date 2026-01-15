@@ -179,12 +179,7 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
+            justify-content: center;
             gap: 12px;
             padding: 12px 0;
         }
@@ -1269,8 +1264,49 @@
 
             // Create invoice
             const handleCreateInvoice = async () => {
+                // Validate client name
+                if (!newInvoice.client || !newInvoice.client.trim()) {
+                    showAlert('Please enter client name', 'error');
+                    return;
+                }
+
+                // Validate sections
+                if (!invoiceSections || invoiceSections.length === 0) {
+                    showAlert('Please add at least one invoice item', 'error');
+                    return;
+                }
+
+                // Validate each section has required fields
+                for (let i = 0; i < invoiceSections.length; i++) {
+                    const section = invoiceSections[i];
+                    if (!section.description || !section.description.trim()) {
+                        showAlert(`Please enter description for item ${i + 1}`, 'error');
+                        return;
+                    }
+                    if (section.type === 'hourly') {
+                        if (!section.rate || parseFloat(section.rate) <= 0) {
+                            showAlert(`Please enter valid rate for item ${i + 1}`, 'error');
+                            return;
+                        }
+                        if (!section.hours || parseFloat(section.hours) <= 0) {
+                            showAlert(`Please enter valid hours for item ${i + 1}`, 'error');
+                            return;
+                        }
+                    } else {
+                        if (!section.amount || parseFloat(section.amount) <= 0) {
+                            showAlert(`Please enter valid amount for item ${i + 1}`, 'error');
+                            return;
+                        }
+                    }
+                }
+
                 setLoading(true);
                 try {
+                    console.log('Creating invoice:', {
+                        ...newInvoice,
+                        sections: invoiceSections
+                    });
+
                     await api.createInvoice({
                         ...newInvoice,
                         sections: invoiceSections
@@ -1281,7 +1317,8 @@
                     setInvoiceSections([{ description: '', type: 'hourly', rate: '', hours: '', amount: '' }]);
                     loadData();
                 } catch (error) {
-                    showAlert(error.message, 'error');
+                    console.error('Invoice creation error:', error);
+                    showAlert(error.message || 'Failed to create invoice', 'error');
                 } finally {
                     setLoading(false);
                 }
