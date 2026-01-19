@@ -270,6 +270,13 @@
             object-fit: contain;
         }
         
+        body.dark .logo img {
+            filter: brightness(0) invert(1);
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+        }
+        
         .logo-icon {
             width: 48px;
             height: 48px;
@@ -796,6 +803,14 @@
         .action-buttons .btn {
             padding: 8px 12px;
             font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-buttons .btn .icon {
+            display: inline-flex;
+            align-items: center;
         }
 
         .role-badge {
@@ -1095,7 +1110,12 @@
                 logout: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"></path></svg>`,
                 alert: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
                 delete: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
-                restore: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M3 12a9 9 0 009 9 9.75 9.75 0 006.74-2.74L21 16"></path></svg>`
+                restore: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M3 12a9 9 0 009 9 9.75 9.75 0 006.74-2.74L21 16"></path></svg>`,
+                edit: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
+                view: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+                complete: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>`,
+                paid: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path></svg>`,
+                unpaid: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>`
             };
             return React.createElement('span', {
                 className: `icon ${className}`,
@@ -1393,16 +1413,19 @@
                         return;
                     }
                     if (section.type === 'hourly') {
-                        if (!section.rate || parseFloat(section.rate) <= 0) {
+                        const rate = parseFloat(section.rate);
+                        const hours = parseFloat(section.hours);
+                        if (isNaN(rate) || rate <= 0) {
                             showAlert(`Please enter valid rate for item ${i + 1}`, 'error');
                             return;
                         }
-                        if (!section.hours || parseFloat(section.hours) <= 0) {
+                        if (isNaN(hours) || hours <= 0) {
                             showAlert(`Please enter valid hours for item ${i + 1}`, 'error');
                             return;
                         }
-                    } else {
-                        if (!section.amount || parseFloat(section.amount) <= 0) {
+                    } else if (section.type === 'fixed') {
+                        const amount = parseFloat(section.amount);
+                        if (isNaN(amount) || amount <= 0) {
                             showAlert(`Please enter valid amount for item ${i + 1}`, 'error');
                             return;
                         }
@@ -1907,18 +1930,33 @@
                                                     <div className="card-title">Ticket Status</div>
                                                 </div>
                                                 <div style={{padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '40px'}}>
-                                                    <svg width="150" height="150" viewBox="0 0 42 42">
-                                                        <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--border-color)" strokeWidth="3"></circle>
-                                                        <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--mint-500)" strokeWidth="3"
-                                                            strokeDasharray={`${tickets.length > 0 ? (tickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33} ${100 - (tickets.length > 0 ? (tickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33)}`}
-                                                            strokeDashoffset="25"></circle>
-                                                        <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--peach-500)" strokeWidth="3"
-                                                            strokeDasharray={`${completedTickets.length > 0 ? (completedTickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33} ${100 - (completedTickets.length > 0 ? (completedTickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33)}`}
-                                                            strokeDashoffset={`${25 - (tickets.length > 0 ? (tickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33)}`}></circle>
-                                                        <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--coral-500)" strokeWidth="3"
-                                                            strokeDasharray={`${overdueTickets.length > 0 ? (overdueTickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33} ${100 - (overdueTickets.length > 0 ? (overdueTickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33)}`}
-                                                            strokeDashoffset={`${25 - (tickets.length > 0 ? (tickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33) - (completedTickets.length > 0 ? (completedTickets.length / (tickets.length + completedTickets.length + overdueTickets.length || 1)) * 100 : 33)}`}></circle>
-                                                    </svg>
+                                                    {(() => {
+                                                        const total = tickets.length + completedTickets.length + overdueTickets.length;
+                                                        const activePercent = total > 0 ? (tickets.length / total) * 100 : 0;
+                                                        const completedPercent = total > 0 ? (completedTickets.length / total) * 100 : 0;
+                                                        const overduePercent = total > 0 ? (overdueTickets.length / total) * 100 : 0;
+                                                        let offset = 25;
+                                                        return (
+                                                            <svg width="150" height="150" viewBox="0 0 42 42">
+                                                                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--border-color)" strokeWidth="3"></circle>
+                                                                {tickets.length > 0 && (
+                                                                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--mint-500)" strokeWidth="3"
+                                                                        strokeDasharray={`${activePercent} ${100 - activePercent}`}
+                                                                        strokeDashoffset="25"></circle>
+                                                                )}
+                                                                {completedTickets.length > 0 && (
+                                                                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--peach-500)" strokeWidth="3"
+                                                                        strokeDasharray={`${completedPercent} ${100 - completedPercent}`}
+                                                                        strokeDashoffset={25 - activePercent}></circle>
+                                                                )}
+                                                                {overdueTickets.length > 0 && (
+                                                                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--coral-500)" strokeWidth="3"
+                                                                        strokeDasharray={`${overduePercent} ${100 - overduePercent}`}
+                                                                        strokeDashoffset={25 - activePercent - completedPercent}></circle>
+                                                                )}
+                                                            </svg>
+                                                        );
+                                                    })()}
                                                     <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
                                                         <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                                                             <div style={{width: '12px', height: '12px', borderRadius: '3px', background: 'var(--mint-500)'}}></div>
@@ -1942,15 +1980,26 @@
                                                     <div className="card-title">Invoice Status</div>
                                                 </div>
                                                 <div style={{padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '40px'}}>
-                                                    <svg width="150" height="150" viewBox="0 0 42 42">
-                                                        <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--border-color)" strokeWidth="3"></circle>
-                                                        <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--sky-500)" strokeWidth="3"
-                                                            strokeDasharray={`${invoices.length > 0 ? (invoices.length / (invoices.length + paidInvoices.length || 1)) * 100 : 50} ${100 - (invoices.length > 0 ? (invoices.length / (invoices.length + paidInvoices.length || 1)) * 100 : 50)}`}
-                                                            strokeDashoffset="25"></circle>
-                                                        <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--mint-500)" strokeWidth="3"
-                                                            strokeDasharray={`${paidInvoices.length > 0 ? (paidInvoices.length / (invoices.length + paidInvoices.length || 1)) * 100 : 50} ${100 - (paidInvoices.length > 0 ? (paidInvoices.length / (invoices.length + paidInvoices.length || 1)) * 100 : 50)}`}
-                                                            strokeDashoffset={`${25 - (invoices.length > 0 ? (invoices.length / (invoices.length + paidInvoices.length || 1)) * 100 : 50)}`}></circle>
-                                                    </svg>
+                                                    {(() => {
+                                                        const total = invoices.length + paidInvoices.length;
+                                                        const unpaidPercent = total > 0 ? (invoices.length / total) * 100 : 0;
+                                                        const paidPercent = total > 0 ? (paidInvoices.length / total) * 100 : 0;
+                                                        return (
+                                                            <svg width="150" height="150" viewBox="0 0 42 42">
+                                                                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--border-color)" strokeWidth="3"></circle>
+                                                                {invoices.length > 0 && (
+                                                                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--sky-500)" strokeWidth="3"
+                                                                        strokeDasharray={`${unpaidPercent} ${100 - unpaidPercent}`}
+                                                                        strokeDashoffset="25"></circle>
+                                                                )}
+                                                                {paidInvoices.length > 0 && (
+                                                                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--mint-500)" strokeWidth="3"
+                                                                        strokeDasharray={`${paidPercent} ${100 - paidPercent}`}
+                                                                        strokeDashoffset={25 - unpaidPercent}></circle>
+                                                                )}
+                                                            </svg>
+                                                        );
+                                                    })()}
                                                     <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
                                                         <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                                                             <div style={{width: '12px', height: '12px', borderRadius: '3px', background: 'var(--sky-500)'}}></div>
@@ -2050,19 +2099,19 @@
                                                         <td>
                                                             <div className="action-buttons" onClick={e => e.stopPropagation()}>
                                                                 <button className="btn btn-secondary" onClick={() => { setDetailTicket(ticket); setShowTicketDetail(true); }}>
-                                                                    👁️ View
+                                                                    <Icon name="view" size={14} /> View
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => { setEditingTicket(ticket); setShowEditTicket(true); }}>
-                                                                    ✏️ Edit
+                                                                    <Icon name="edit" size={14} /> Edit
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
-                                                                    ✓ Complete
+                                                                    <Icon name="complete" size={14} /> Complete
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => handleArchiveTicket(ticket.id)}>
-                                                                    📦 Archive
+                                                                    <Icon name="archive" size={14} /> Archive
                                                                 </button>
                                                                 <button className="btn btn-danger" onClick={() => handleDeleteTicket(ticket.id)}>
-                                                                    🗑️ Delete
+                                                                    <Icon name="trash" size={14} /> Delete
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2103,13 +2152,13 @@
                                                         <td>
                                                             <div className="action-buttons" onClick={e => e.stopPropagation()}>
                                                                 <button className="btn btn-secondary" onClick={() => { setDetailTicket(ticket); setShowTicketDetail(true); }}>
-                                                                    👁️ View
+                                                                    <Icon name="view" size={14} /> View
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => { setEditingTicket(ticket); setShowEditTicket(true); }}>
-                                                                    ✏️ Edit
+                                                                    <Icon name="edit" size={14} /> Edit
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
-                                                                    ✓ Complete
+                                                                    <Icon name="complete" size={14} /> Complete
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2150,13 +2199,13 @@
                                                             <td>
                                                                 <div className="action-buttons" onClick={e => e.stopPropagation()}>
                                                                     <button className="btn btn-secondary" onClick={() => { setDetailTicket(ticket); setShowTicketDetail(true); }}>
-                                                                        👁️ View
+                                                                        <Icon name="view" size={14} /> View
                                                                     </button>
                                                                     <button className="btn btn-secondary" onClick={() => { setEditingTicket(ticket); setShowEditTicket(true); }}>
-                                                                        ✏️ Edit
+                                                                        <Icon name="edit" size={14} /> Edit
                                                                     </button>
                                                                     <button className="btn btn-success" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
-                                                                        ✓ Complete
+                                                                        <Icon name="complete" size={14} /> Complete
                                                                     </button>
                                                                 </div>
                                                             </td>
@@ -2194,10 +2243,10 @@
                                                         <td>
                                                             <div className="action-buttons" onClick={e => e.stopPropagation()}>
                                                                 <button className="btn btn-secondary" onClick={() => { setDetailTicket(ticket); setShowTicketDetail(true); }}>
-                                                                    👁️ View
+                                                                    <Icon name="view" size={14} /> View
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => handleArchiveTicket(ticket.id)}>
-                                                                    📦 Archive
+                                                                    <Icon name="archive" size={14} /> Archive
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2237,16 +2286,16 @@
                                                         <td>
                                                             <div className="action-buttons">
                                                                 <button className="btn btn-secondary" onClick={() => handleEditInvoice(invoice)}>
-                                                                    ✏️ Edit
+                                                                    <Icon name="edit" size={14} /> Edit
                                                                 </button>
                                                                 <button className="btn btn-primary" onClick={() => handleMarkPaid(invoice.id, true)}>
-                                                                    💳 Mark Paid
+                                                                    <Icon name="paid" size={14} /> Mark Paid
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => handleArchiveInvoice(invoice.id)}>
-                                                                    📦 Archive
+                                                                    <Icon name="archive" size={14} /> Archive
                                                                 </button>
                                                                 <button className="btn btn-danger" onClick={() => handleDeleteInvoice(invoice.id)}>
-                                                                    🗑️ Delete
+                                                                    <Icon name="trash" size={14} /> Delete
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2283,7 +2332,7 @@
                                                         <td>
                                                             <div className="action-buttons">
                                                                 <button className="btn btn-secondary" onClick={() => handleArchiveInvoice(invoice.id)}>
-                                                                    📦 Archive
+                                                                    <Icon name="archive" size={14} /> Archive
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2325,7 +2374,7 @@
                                                         <td>
                                                             <div className="action-buttons">
                                                                 <button className="btn btn-secondary" onClick={() => { setEditingUser(user); setShowEditUser(true); }}>
-                                                                    ✏️ Edit
+                                                                    <Icon name="edit" size={14} /> Edit
                                                                 </button>
                                                                 {/* Owner can delete anyone except themselves */}
                                                                 {/* Admin can delete staff only */}
@@ -2335,7 +2384,7 @@
                                                                     (currentUser.role === 'admin' && user.role === 'staff')
                                                                 ) && (
                                                                     <button className="btn btn-danger" onClick={() => handleDeleteUser(user.id, user.username)}>
-                                                                        🗑️ Delete
+                                                                        <Icon name="trash" size={14} /> Delete
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -2372,17 +2421,17 @@
                                                             <td>
                                                                 <div className="action-buttons" onClick={e => e.stopPropagation()}>
                                                                     <button className="btn btn-secondary" onClick={() => { setDetailTicket(ticket); setShowTicketDetail(true); }}>
-                                                                        👁️ View
+                                                                        <Icon name="view" size={14} /> View
                                                                     </button>
                                                                     <button className="btn btn-secondary" onClick={() => handleUnarchiveTicket(ticket.id)}>
-                                                                        <Icon name="restore" size={16} /> Unarchive
+                                                                        <Icon name="restore" size={14} /> Unarchive
                                                                     </button>
                                                                     <button className="btn btn-danger" onClick={() => {
                                                                         if (confirm('Move to trash?')) {
                                                                             handleDeleteTicket(ticket.id);
                                                                         }
                                                                     }}>
-                                                                        <Icon name="trash" size={16} /> Delete
+                                                                        <Icon name="trash" size={14} /> Delete
                                                                     </button>
                                                                 </div>
                                                             </td>
@@ -2618,8 +2667,14 @@
                                     <div className="modal-title">Complete Ticket</div>
                                     <button className="close-btn" onClick={() => setShowResolution(false)}>✕</button>
                                 </div>
-                                <p><strong>Client:</strong> {selectedTicket.client}</p>
-                                <p><strong>Task:</strong> {selectedTicket.task}</p>
+                                <div style={{marginBottom: '16px'}}>
+                                    <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Client</div>
+                                    <div style={{fontWeight: '600', color: 'var(--text-primary)'}}>{selectedTicket.client}</div>
+                                </div>
+                                <div style={{marginBottom: '16px'}}>
+                                    <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Task</div>
+                                    <div style={{fontWeight: '600', color: 'var(--text-primary)'}}>{selectedTicket.task}</div>
+                                </div>
                                 <div className="form-group">
                                     <label>Resolution *</label>
                                     <textarea value={resolution} onChange={e => setResolution(e.target.value)} placeholder="Describe how this ticket was resolved..." />
@@ -2940,6 +2995,17 @@
                                         ⚠️ Admins cannot change owner/co-owner passwords
                                     </div>
                                 )}
+                                {/* Role field - only owners can change roles */}
+                                {currentUser.role === 'owner' && editingUser.id !== currentUser.id && (
+                                    <div className="form-group">
+                                        <label>Role</label>
+                                        <select value={editingUser.role} onChange={e => setEditingUser({...editingUser, role: e.target.value})}>
+                                            <option value="coowner">Co-Owner</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="staff">Staff</option>
+                                        </select>
+                                    </div>
+                                )}
                                 <div className="form-group">
                                     <label>First Name</label>
                                     <input value={editingUser.firstName} onChange={e => setEditingUser({...editingUser, firstName: e.target.value})} />
@@ -2969,7 +3035,7 @@
                                     <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
                                         <div>
                                             <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Client</div>
-                                            <div style={{fontWeight: '600'}}>{detailTicket.client}</div>
+                                            <div style={{fontWeight: '600', color: 'var(--text-primary)'}}>{detailTicket.client}</div>
                                         </div>
                                         <div>
                                             <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Status</div>
@@ -2986,13 +3052,13 @@
                                     
                                     <div>
                                         <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Task</div>
-                                        <div style={{fontWeight: '500'}}>{detailTicket.task}</div>
+                                        <div style={{fontWeight: '500', color: 'var(--text-primary)'}}>{detailTicket.task}</div>
                                     </div>
                                     
                                     {detailTicket.description && (
                                         <div>
                                             <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Description</div>
-                                            <div style={{padding: '12px', background: 'rgba(125, 211, 192, 0.05)', borderRadius: '8px', fontSize: '14px', lineHeight: '1.5'}}>
+                                            <div style={{padding: '12px', background: 'rgba(125, 211, 192, 0.05)', borderRadius: '8px', fontSize: '14px', lineHeight: '1.5', color: 'var(--text-primary)'}}>
                                                 {detailTicket.description}
                                             </div>
                                         </div>
@@ -3001,7 +3067,7 @@
                                     <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
                                         <div>
                                             <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Deadline</div>
-                                            <div style={{fontWeight: '500', color: new Date(detailTicket.deadline) < new Date() && detailTicket.status !== 'completed' ? 'var(--coral-500)' : 'inherit'}}>
+                                            <div style={{fontWeight: '500', color: new Date(detailTicket.deadline) < new Date() && detailTicket.status !== 'completed' ? 'var(--coral-500)' : 'var(--text-primary)'}}>
                                                 {new Date(detailTicket.deadline).toLocaleDateString('en-GB', {
                                                     weekday: 'short',
                                                     day: 'numeric',
@@ -3021,18 +3087,18 @@
                                     <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
                                         <div>
                                             <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Assigned To</div>
-                                            <div style={{fontWeight: '500'}}>{detailTicket.assignedToName || 'Unassigned'}</div>
+                                            <div style={{fontWeight: '500', color: 'var(--text-primary)'}}>{detailTicket.assignedToName || 'Unassigned'}</div>
                                         </div>
                                         <div>
                                             <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Location</div>
-                                            <div style={{fontWeight: '500'}}>{detailTicket.location || 'Not specified'}</div>
+                                            <div style={{fontWeight: '500', color: 'var(--text-primary)'}}>{detailTicket.location || 'Not specified'}</div>
                                         </div>
                                     </div>
                                     
                                     {detailTicket.resolution && (
                                         <div>
                                             <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px'}}>Resolution</div>
-                                            <div style={{padding: '12px', background: 'rgba(125, 211, 192, 0.1)', borderRadius: '8px', fontSize: '14px', lineHeight: '1.5'}}>
+                                            <div style={{padding: '12px', background: 'rgba(125, 211, 192, 0.1)', borderRadius: '8px', fontSize: '14px', lineHeight: '1.5', color: 'var(--text-primary)'}}>
                                                 {detailTicket.resolution}
                                             </div>
                                         </div>
