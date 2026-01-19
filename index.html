@@ -1408,10 +1408,12 @@
                 // Validate each section has required fields
                 for (let i = 0; i < invoiceSections.length; i++) {
                     const section = invoiceSections[i];
+                    
                     if (!section.description || !section.description.trim()) {
                         showAlert(`Please enter description for item ${i + 1}`, 'error');
                         return;
                     }
+                    
                     if (section.type === 'hourly') {
                         const rate = parseFloat(section.rate);
                         const hours = parseFloat(section.hours);
@@ -1423,7 +1425,8 @@
                             showAlert(`Please enter valid hours for item ${i + 1}`, 'error');
                             return;
                         }
-                    } else if (section.type === 'fixed') {
+                    } else {
+                        // Fixed charge - just need a valid amount > 0
                         const amount = parseFloat(section.amount);
                         if (isNaN(amount) || amount <= 0) {
                             showAlert(`Please enter valid amount for item ${i + 1}`, 'error');
@@ -2776,6 +2779,8 @@
                                                     <>
                                                         <input
                                                             type="number"
+                                                            step="0.01"
+                                                            min="0"
                                                             placeholder="Amount (£)"
                                                             value={section.amount}
                                                             onChange={e => updateInvoiceSection(index, 'amount', e.target.value)}
@@ -2896,6 +2901,8 @@
                                                     <>
                                                         <input
                                                             type="number"
+                                                            step="0.01"
+                                                            min="0"
                                                             placeholder="Amount (£)"
                                                             value={section.amount || ''}
                                                             onChange={e => updateInvoiceSection(index, 'amount', e.target.value)}
