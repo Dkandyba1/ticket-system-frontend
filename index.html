@@ -1102,7 +1102,9 @@
                 logout: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"></path></svg>`,
                 alert: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
                 delete: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
-                restore: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M3 12a9 9 0 009 9 9.75 9.75 0 006.74-2.74L21 16"></path></svg>`
+                restore: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M3 12a9 9 0 009 9 9.75 9.75 0 006.74-2.74L21 16"></path></svg>`,
+                mail: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
+                edit: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`
             };
             return React.createElement('span', {
                 className: `icon ${className}`,
@@ -1165,9 +1167,18 @@
                 client: '', paymentTerms: 'now', inQuickBooks: 'no', paymentDeadline: '', contactName: '', contactEmail: '', contactPhone: ''
             });
             const [newStaff, setNewStaff] = useState({
-                username: '', password: '', role: 'staff', firstName: '', lastName: ''
+                username: '', password: '', role: 'staff', firstName: '', lastName: '', email: ''
             });
             const [resolution, setResolution] = useState('');
+            const [emailConfig, setEmailConfig] = useState({
+                enabled: false,
+                host: '',
+                port: 587,
+                secure: false,
+                user: '',
+                pass: '',
+                from: ''
+            });
 
             // Show alert
             const showAlert = (message, type = 'success') => {
@@ -1583,7 +1594,7 @@
                     await api.createUser(newStaff);
                     showAlert('User created successfully!');
                     setShowAddStaff(false);
-                    setNewStaff({ username: '', password: '', role: 'staff', firstName: '', lastName: '' });
+                    setNewStaff({ username: '', password: '', role: 'staff', firstName: '', lastName: '', email: '' });
                     loadData();
                 } catch (error) {
                     showAlert(error.message, 'error');
@@ -1670,6 +1681,72 @@
             };
 
             // Logout
+            // Email configuration handlers
+            const loadEmailConfig = async () => {
+                try {
+                    const config = await api.request('/email/config');
+                    setEmailConfig(config);
+                } catch (error) {
+                    console.error('Failed to load email config:', error);
+                }
+            };
+
+            const handleSaveEmailConfig = async () => {
+                setLoading(true);
+                try {
+                    await api.request('/email/config', {
+                        method: 'POST',
+                        body: JSON.stringify(emailConfig)
+                    });
+                    showAlert('Email configuration saved successfully!');
+                } catch (error) {
+                    showAlert(error.message, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleTestEmail = async () => {
+                const email = prompt('Enter email address to send test email to:');
+                if (!email) return;
+                
+                setLoading(true);
+                try {
+                    await api.request('/email/test', {
+                        method: 'POST',
+                        body: JSON.stringify({ to: email })
+                    });
+                    showAlert('Test email sent successfully! Check your inbox.');
+                } catch (error) {
+                    showAlert(error.message, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSendOverdueReminders = async () => {
+                if (!confirm('Send overdue reminders to all users with overdue tickets?')) return;
+                
+                setLoading(true);
+                try {
+                    const result = await api.request('/email/send-overdue-reminders', {
+                        method: 'POST'
+                    });
+                    showAlert(result.message);
+                } catch (error) {
+                    showAlert(error.message, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Load email config on mount for owners/coowners
+            useEffect(() => {
+                if (currentUser && ['owner', 'coowner'].includes(currentUser.role)) {
+                    loadEmailConfig();
+                }
+            }, [currentUser]);
+
             const handleLogout = () => {
                 api.removeToken();
                 setCurrentUser(null);
@@ -1797,6 +1874,12 @@
                                         <span>Staff</span>
                                     </div>
                                 )}
+                                {['owner', 'coowner'].includes(currentUser.role) && (
+                                    <div className={`nav-item ${currentView === 'email' ? 'active' : ''}`} onClick={() => handleNavClick('email')}>
+                                        <Icon name="mail" size={20} />
+                                        <span>Email Settings</span>
+                                    </div>
+                                )}
                                 <div className={`nav-item ${currentView === 'archived' ? 'active' : ''}`} onClick={() => handleNavClick('archived')}>
                                     <Icon name="archive" size={20} />
                                     <span>Archived</span>
@@ -1835,6 +1918,7 @@
                                     {currentView === 'invoices' && 'Invoices'}
                                     {currentView === 'paid' && 'Paid Invoices'}
                                     {currentView === 'users' && 'Staff Management'}
+                                    {currentView === 'email' && 'Email Settings'}
                                     {currentView === 'archived' && 'Archived Items'}
                                 </div>
                                 <div className="topbar-actions">
@@ -2111,16 +2195,16 @@
                                                                     👁️ View
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => { setEditingTicket(ticket); setShowEditTicket(true); }}>
-                                                                    ✏️ Edit
+                                                                    <Icon name="edit" size={16} /> Edit
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
-                                                                    ✓ Complete
+                                                                    <Icon name="check" size={16} /> Complete
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => handleArchiveTicket(ticket.id)}>
-                                                                    📦 Archive
+                                                                    <Icon name="archive" size={16} /> Archive
                                                                 </button>
                                                                 <button className="btn btn-danger" onClick={() => handleDeleteTicket(ticket.id)}>
-                                                                    🗑️ Delete
+                                                                    <Icon name="trash" size={16} /> Delete
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2164,10 +2248,10 @@
                                                                     👁️ View
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => { setEditingTicket(ticket); setShowEditTicket(true); }}>
-                                                                    ✏️ Edit
+                                                                    <Icon name="edit" size={16} /> Edit
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
-                                                                    ✓ Complete
+                                                                    <Icon name="check" size={16} /> Complete
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2211,10 +2295,10 @@
                                                                         👁️ View
                                                                     </button>
                                                                     <button className="btn btn-secondary" onClick={() => { setEditingTicket(ticket); setShowEditTicket(true); }}>
-                                                                        ✏️ Edit
+                                                                        <Icon name="edit" size={16} /> Edit
                                                                     </button>
                                                                     <button className="btn btn-success" onClick={() => { setSelectedTicket(ticket); setShowResolution(true); }}>
-                                                                        ✓ Complete
+                                                                        <Icon name="check" size={16} /> Complete
                                                                     </button>
                                                                 </div>
                                                             </td>
@@ -2255,7 +2339,7 @@
                                                                     👁️ View
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => handleArchiveTicket(ticket.id)}>
-                                                                    📦 Archive
+                                                                    <Icon name="archive" size={16} /> Archive
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2295,16 +2379,16 @@
                                                         <td>
                                                             <div className="action-buttons">
                                                                 <button className="btn btn-secondary" onClick={() => handleEditInvoice(invoice)}>
-                                                                    ✏️ Edit
+                                                                    <Icon name="edit" size={16} /> Edit
                                                                 </button>
                                                                 <button className="btn btn-primary" onClick={() => handleMarkPaid(invoice.id, true)}>
-                                                                    💳 Mark Paid
+                                                                    <Icon name="card" size={16} /> Mark Paid
                                                                 </button>
                                                                 <button className="btn btn-secondary" onClick={() => handleArchiveInvoice(invoice.id)}>
-                                                                    📦 Archive
+                                                                    <Icon name="archive" size={16} /> Archive
                                                                 </button>
                                                                 <button className="btn btn-danger" onClick={() => handleDeleteInvoice(invoice.id)}>
-                                                                    🗑️ Delete
+                                                                    <Icon name="trash" size={16} /> Delete
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2341,7 +2425,7 @@
                                                         <td>
                                                             <div className="action-buttons">
                                                                 <button className="btn btn-secondary" onClick={() => handleArchiveInvoice(invoice.id)}>
-                                                                    📦 Archive
+                                                                    <Icon name="archive" size={16} /> Archive
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -2383,7 +2467,7 @@
                                                         <td>
                                                             <div className="action-buttons">
                                                                 <button className="btn btn-secondary" onClick={() => { setEditingUser(user); setShowEditUser(true); }}>
-                                                                    ✏️ Edit
+                                                                    <Icon name="edit" size={16} /> Edit
                                                                 </button>
                                                                 {/* Owner can delete anyone except themselves */}
                                                                 {/* Admin can delete staff only */}
@@ -2393,7 +2477,7 @@
                                                                     (currentUser.role === 'admin' && user.role === 'staff')
                                                                 ) && (
                                                                     <button className="btn btn-danger" onClick={() => handleDeleteUser(user.id, user.username)}>
-                                                                        🗑️ Delete
+                                                                        <Icon name="trash" size={16} /> Delete
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -2402,6 +2486,149 @@
                                                 ))}
                                             </tbody>
                                         </table>
+                                    </div>
+                                )}
+
+                                {/* Email Settings View */}
+                                {currentView === 'email' && ['owner', 'coowner'].includes(currentUser.role) && (
+                                    <div className="card">
+                                        <div className="card-header">
+                                            <div className="card-title">📧 Email Configuration</div>
+                                        </div>
+                                        <div style={{padding: '24px'}}>
+                                            <div style={{marginBottom: '20px', padding: '16px', background: 'rgba(110, 181, 255, 0.1)', borderRadius: '8px', border: '1px solid rgba(110, 181, 255, 0.3)'}}>
+                                                <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)'}}>ℹ️ Email System Configuration</h4>
+                                                <p style={{margin: 0, fontSize: '14px', color: 'var(--text-secondary)'}}>
+                                                    Configure SMTP settings to enable automatic email notifications. Users will receive emails when tickets are assigned to them.
+                                                </p>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={emailConfig.enabled}
+                                                        onChange={e => setEmailConfig({...emailConfig, enabled: e.target.checked})}
+                                                        style={{width: '20px', height: '20px', cursor: 'pointer'}}
+                                                    />
+                                                    <span style={{fontWeight: '600', fontSize: '16px'}}>Enable Email Notifications</span>
+                                                </label>
+                                            </div>
+
+                                            {emailConfig.enabled && (
+                                                <>
+                                                    <div className="form-group">
+                                                        <label>SMTP Host *</label>
+                                                        <input 
+                                                            value={emailConfig.host}
+                                                            onChange={e => setEmailConfig({...emailConfig, host: e.target.value})}
+                                                            placeholder="smtp.gmail.com"
+                                                        />
+                                                        <small style={{color: 'var(--text-secondary)', fontSize: '12px'}}>
+                                                            Gmail: smtp.gmail.com | Outlook: smtp-mail.outlook.com
+                                                        </small>
+                                                    </div>
+
+                                                    <div className="form-group">
+                                                        <label>SMTP Port</label>
+                                                        <input 
+                                                            type="number"
+                                                            value={emailConfig.port}
+                                                            onChange={e => setEmailConfig({...emailConfig, port: parseInt(e.target.value)})}
+                                                            placeholder="587"
+                                                        />
+                                                        <small style={{color: 'var(--text-secondary)', fontSize: '12px'}}>
+                                                            Common ports: 587 (recommended), 465 (SSL), 25
+                                                        </small>
+                                                    </div>
+
+                                                    <div className="form-group">
+                                                        <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={emailConfig.secure}
+                                                                onChange={e => setEmailConfig({...emailConfig, secure: e.target.checked})}
+                                                                style={{width: '18px', height: '18px', cursor: 'pointer'}}
+                                                            />
+                                                            <span>Use Secure Connection (SSL/TLS)</span>
+                                                        </label>
+                                                        <small style={{color: 'var(--text-secondary)', fontSize: '12px'}}>
+                                                            Enable for port 465, disable for port 587
+                                                        </small>
+                                                    </div>
+
+                                                    <div className="form-group">
+                                                        <label>SMTP Username *</label>
+                                                        <input 
+                                                            value={emailConfig.user}
+                                                            onChange={e => setEmailConfig({...emailConfig, user: e.target.value})}
+                                                            placeholder="your-email@gmail.com"
+                                                        />
+                                                    </div>
+
+                                                    <div className="form-group">
+                                                        <label>SMTP Password *</label>
+                                                        <input 
+                                                            type="password"
+                                                            value={emailConfig.pass}
+                                                            onChange={e => setEmailConfig({...emailConfig, pass: e.target.value})}
+                                                            placeholder="App password or SMTP password"
+                                                        />
+                                                        <small style={{color: 'var(--text-secondary)', fontSize: '12px'}}>
+                                                            Gmail users: Use App Password from https://myaccount.google.com/apppasswords
+                                                        </small>
+                                                    </div>
+
+                                                    <div className="form-group">
+                                                        <label>From Email Address</label>
+                                                        <input 
+                                                            value={emailConfig.from}
+                                                            onChange={e => setEmailConfig({...emailConfig, from: e.target.value})}
+                                                            placeholder="noreply@yourcompany.com"
+                                                        />
+                                                        <small style={{color: 'var(--text-secondary)', fontSize: '12px'}}>
+                                                            Optional: Leave blank to use SMTP username
+                                                        </small>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            <div style={{display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap'}}>
+                                                <button 
+                                                    className="btn btn-primary" 
+                                                    onClick={handleSaveEmailConfig}
+                                                    style={{minWidth: '150px'}}>
+                                                    <Icon name="check" size={16} /> Save Configuration
+                                                </button>
+                                                {emailConfig.enabled && (
+                                                    <>
+                                                        <button 
+                                                            className="btn btn-secondary" 
+                                                            onClick={handleTestEmail}
+                                                            style={{minWidth: '150px'}}>
+                                                            <Icon name="mail" size={16} /> Send Test Email
+                                                        </button>
+                                                        <button 
+                                                            className="btn btn-secondary" 
+                                                            onClick={handleSendOverdueReminders}
+                                                            style={{minWidth: '180px'}}>
+                                                            <Icon name="alert" size={16} /> Send Overdue Reminders
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            <div style={{marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)'}}>
+                                                <h4 style={{margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600'}}>📋 Email Features:</h4>
+                                                <ul style={{margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.8'}}>
+                                                    <li>Automatic email when ticket is assigned to a user</li>
+                                                    <li>Automatic email when ticket assignment changes</li>
+                                                    <li>Manual overdue ticket reminders</li>
+                                                    <li>Beautiful HTML email templates with your branding</li>
+                                                    <li>Test email functionality to verify configuration</li>
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -2961,6 +3188,10 @@
                                     <input value={newStaff.lastName} onChange={e => setNewStaff({...newStaff, lastName: e.target.value})} />
                                 </div>
                                 <div className="form-group">
+                                    <label>Email Address</label>
+                                    <input type="email" value={newStaff.email} onChange={e => setNewStaff({...newStaff, email: e.target.value})} placeholder="user@example.com" />
+                                </div>
+                                <div className="form-group">
                                     <label>Role *</label>
                                     <select value={newStaff.role} onChange={e => setNewStaff({...newStaff, role: e.target.value})}>
                                         <option value="staff">Staff</option>
@@ -3007,6 +3238,10 @@
                                 <div className="form-group">
                                     <label>Last Name</label>
                                     <input value={editingUser.lastName} onChange={e => setEditingUser({...editingUser, lastName: e.target.value})} />
+                                </div>
+                                <div className="form-group">
+                                    <label>Email Address</label>
+                                    <input type="email" value={editingUser.email || ''} onChange={e => setEditingUser({...editingUser, email: e.target.value})} placeholder="user@example.com" />
                                 </div>
                                 {/* Only owner can change roles */}
                                 {currentUser.role === 'owner' && (
