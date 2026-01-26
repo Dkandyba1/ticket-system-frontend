@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1747,6 +1748,145 @@
                 }
             }, [currentUser]);
 
+            // Export all data to Excel
+            const handleExportData = async () => {
+                if (!confirm('Export all system data to Excel? This includes all tickets, invoices, and users (including deleted items).')) return;
+                
+                setLoading(true);
+                try {
+                    const data = await api.request('/export/all');
+                    
+                    // Create Excel workbook using SheetJS (already loaded in page)
+                    const XLSX = window.XLSX;
+                    if (!XLSX) {
+                        showAlert('Excel library not loaded. Please refresh and try again.', 'error');
+                        return;
+                    }
+
+                    // Create workbook
+                    const wb = XLSX.utils.book_new();
+
+                    // Summary sheet
+                    const summaryData = [
+                        ['GENIUS IT Solutions - Data Export'],
+                        [''],
+                        ['Export Date:', new Date(data.exportDate).toLocaleString()],
+                        ['Exported By:', data.exportedBy],
+                        [''],
+                        ['STATISTICS'],
+                        ['Active Tickets:', data.statistics.activeTickets],
+                        ['Completed Tickets:', data.statistics.completedTickets],
+                        ['Overdue Tickets:', data.statistics.overdueTickets],
+                        ['Archived Tickets:', data.statistics.archivedTickets],
+                        ['Deleted Tickets:', data.statistics.deletedTickets],
+                        [''],
+                        ['Active Invoices:', data.statistics.activeInvoices],
+                        ['Paid Invoices:', data.statistics.paidInvoices],
+                        ['Archived Invoices:', data.statistics.archivedInvoices],
+                        ['Deleted Invoices:', data.statistics.deletedInvoices],
+                        ['Total Revenue:', `£${parseFloat(data.statistics.totalRevenue).toFixed(2)}`],
+                        [''],
+                        ['Total Users:', data.statistics.totalUsers]
+                    ];
+                    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+                    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+
+                    // Tickets sheet
+                    const ticketsData = data.tickets.map(t => ({
+                        'ID': t.id,
+                        'Status': t.status,
+                        'Client': t.client,
+                        'Task': t.task,
+                        'Description': t.description || '',
+                        'Deadline': new Date(t.deadline).toLocaleDateString(),
+                        'Location': t.location || '',
+                        'Urgency': t.urgency || '',
+                        'Assigned To': t.assignedToName || 'Unassigned',
+                        'Resolution': t.resolution || '',
+                        'Created': new Date(t.createdAt).toLocaleString(),
+                        'Updated': t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '',
+                        'Completed': t.completedAt ? new Date(t.completedAt).toLocaleString() : '',
+                        'Archived': t.archivedAt ? new Date(t.archivedAt).toLocaleString() : '',
+                        'Deleted': t.deletedDate ? new Date(t.deletedDate).toLocaleString() : ''
+                    }));
+                    const ticketsSheet = XLSX.utils.json_to_sheet(ticketsData);
+                    XLSX.utils.book_append_sheet(wb, ticketsSheet, 'Tickets');
+
+                    // Invoices sheet
+                    const invoicesData = data.invoices.map(inv => ({
+                        'ID': inv.id,
+                        'Status': inv.status,
+                        'Client': inv.client,
+                        'Contact Name': inv.contactName || '',
+                        'Contact Email': inv.contactEmail || '',
+                        'Contact Phone': inv.contactPhone || '',
+                        'Payment Terms': (inv.paymentTerms || '').replace('_', ' '),
+                        'Payment Deadline': inv.paymentDeadline ? new Date(inv.paymentDeadline).toLocaleDateString() : '',
+                        'Total Amount': `£${parseFloat(inv.totalAmount || 0).toFixed(2)}`,
+                        'In QuickBooks': inv.inQuickBooks || 'no',
+                        'Created': new Date(inv.createdAt).toLocaleString(),
+                        'Paid': inv.paidAt ? new Date(inv.paidAt).toLocaleString() : '',
+                        'Archived': inv.archivedAt ? new Date(inv.archivedAt).toLocaleString() : '',
+                        'Deleted': inv.deletedDate ? new Date(inv.deletedDate).toLocaleString() : ''
+                    }));
+                    const invoicesSheet = XLSX.utils.json_to_sheet(invoicesData);
+                    XLSX.utils.book_append_sheet(wb, invoicesSheet, 'Invoices');
+
+                    // Invoice Details sheet (sections breakdown)
+                    const invoiceDetailsData = [];
+                    data.invoices.forEach(inv => {
+                        if (inv.sections && Array.isArray(inv.sections)) {
+                            inv.sections.forEach((section, idx) => {
+                                invoiceDetailsData.push({
+                                    'Invoice ID': inv.id,
+                                    'Client': inv.client,
+                                    'Item #': idx + 1,
+                                    'Description': section.description,
+                                    'Type': section.type,
+                                    'Rate': section.rate || '',
+                                    'Hours': section.hours || '',
+                                    'Fixed Amount': section.amount || '',
+                                    'Subtotal': section.type === 'hourly' 
+                                        ? `£${(parseFloat(section.rate || 0) * parseFloat(section.hours || 0)).toFixed(2)}`
+                                        : `£${parseFloat(section.amount || 0).toFixed(2)}`
+                                });
+                            });
+                        }
+                    });
+                    if (invoiceDetailsData.length > 0) {
+                        const detailsSheet = XLSX.utils.json_to_sheet(invoiceDetailsData);
+                        XLSX.utils.book_append_sheet(wb, detailsSheet, 'Invoice Details');
+                    }
+
+                    // Users sheet
+                    const usersData = data.users.map(u => ({
+                        'ID': u.id,
+                        'Username': u.username,
+                        'Role': u.role,
+                        'First Name': u.firstName,
+                        'Last Name': u.lastName,
+                        'Email': u.email || '',
+                        'Created': new Date(u.createdAt).toLocaleString()
+                    }));
+                    const usersSheet = XLSX.utils.json_to_sheet(usersData);
+                    XLSX.utils.book_append_sheet(wb, usersSheet, 'Users');
+
+                    // Generate filename with timestamp
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                    const filename = `GeniusTech_Backup_${timestamp}.xlsx`;
+
+                    // Download file
+                    XLSX.writeFile(wb, filename);
+                    
+                    showAlert('Data exported successfully! Check your downloads folder.');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    showAlert(error.message || 'Failed to export data', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
             const handleLogout = () => {
                 api.removeToken();
                 setCurrentUser(null);
@@ -1922,6 +2062,18 @@
                                     {currentView === 'archived' && 'Archived Items'}
                                 </div>
                                 <div className="topbar-actions">
+                                    {['owner', 'coowner'].includes(currentUser.role) && (
+                                        <button 
+                                            className="btn btn-secondary" 
+                                            onClick={handleExportData}
+                                            style={{marginRight: '12px', display: 'flex', alignItems: 'center', gap: '8px'}}
+                                            title="Export all data to Excel">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                                            </svg>
+                                            <span>Export Data</span>
+                                        </button>
+                                    )}
                                     <button className="icon-btn" onClick={() => setDarkMode(!darkMode)}>
                                         {darkMode ? '☀️' : '🌙'}
                                     </button>
@@ -2627,6 +2779,27 @@
                                                     <li>Beautiful HTML email templates with your branding</li>
                                                     <li>Test email functionality to verify configuration</li>
                                                 </ul>
+                                            </div>
+
+                                            <div style={{marginTop: '32px', padding: '20px', background: 'rgba(125, 211, 192, 0.1)', borderRadius: '8px', border: '2px solid rgba(125, 211, 192, 0.3)'}}>
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px'}}>
+                                                    <div style={{fontSize: '32px'}}>💾</div>
+                                                    <div>
+                                                        <h4 style={{margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>Data Backup & Export</h4>
+                                                        <p style={{margin: 0, fontSize: '13px', color: 'var(--text-secondary)'}}>
+                                                            Export all system data to Excel for backups and offline access
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    className="btn btn-primary" 
+                                                    onClick={handleExportData}
+                                                    style={{minWidth: '180px', background: 'linear-gradient(135deg, var(--mint-500), #5fc9b4)', border: 'none'}}>
+                                                    📊 Export All Data to Excel
+                                                </button>
+                                                <div style={{marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)'}}>
+                                                    <strong>Export includes:</strong> All tickets, invoices, users, and statistics (including deleted items)
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
