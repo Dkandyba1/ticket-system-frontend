@@ -1805,8 +1805,8 @@
                         'Resolution': t.resolution || '',
                         'Created': new Date(t.createdAt).toLocaleString(),
                         'Updated': t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '',
-                        'Completed': t.completedAt ? new Date(t.completedAt).toLocaleString() : '',
-                        'Archived': t.archivedAt ? new Date(t.archivedAt).toLocaleString() : '',
+                        'Completed': t.completedDate ? new Date(t.completedDate).toLocaleString() : '',
+                        'Archived': t.archivedDate ? new Date(t.archivedDate).toLocaleString() : '',
                         'Deleted': t.deletedDate ? new Date(t.deletedDate).toLocaleString() : ''
                     }));
                     const ticketsSheet = XLSX.utils.json_to_sheet(ticketsData);
@@ -1825,8 +1825,8 @@
                         'Total Amount': `£${parseFloat(inv.totalAmount || 0).toFixed(2)}`,
                         'In QuickBooks': inv.inQuickBooks || 'no',
                         'Created': new Date(inv.createdAt).toLocaleString(),
-                        'Paid': inv.paidAt ? new Date(inv.paidAt).toLocaleString() : '',
-                        'Archived': inv.archivedAt ? new Date(inv.archivedAt).toLocaleString() : '',
+                        'Paid': inv.paidDate ? new Date(inv.paidDate).toLocaleString() : '',
+                        'Archived': inv.archivedDate ? new Date(inv.archivedDate).toLocaleString() : '',
                         'Deleted': inv.deletedDate ? new Date(inv.deletedDate).toLocaleString() : ''
                     }));
                     const invoicesSheet = XLSX.utils.json_to_sheet(invoicesData);
@@ -1834,25 +1834,36 @@
 
                     // Invoice Details sheet (sections breakdown)
                     const invoiceDetailsData = [];
-                    data.invoices.forEach(inv => {
-                        if (inv.sections && Array.isArray(inv.sections)) {
-                            inv.sections.forEach((section, idx) => {
+                    if (data.invoiceSections && Array.isArray(data.invoiceSections)) {
+                        // Group sections by invoice
+                        const sectionsByInvoice = {};
+                        data.invoiceSections.forEach(section => {
+                            if (!sectionsByInvoice[section.invoiceId]) {
+                                sectionsByInvoice[section.invoiceId] = [];
+                            }
+                            sectionsByInvoice[section.invoiceId].push(section);
+                        });
+
+                        // Create rows for each section
+                        data.invoices.forEach(inv => {
+                            const sections = sectionsByInvoice[inv.id] || [];
+                            sections.forEach((section, idx) => {
                                 invoiceDetailsData.push({
                                     'Invoice ID': inv.id,
                                     'Client': inv.client,
                                     'Item #': idx + 1,
                                     'Description': section.description,
                                     'Type': section.type,
-                                    'Rate': section.rate || '',
+                                    'Rate': section.rate ? `£${parseFloat(section.rate).toFixed(2)}` : '',
                                     'Hours': section.hours || '',
-                                    'Fixed Amount': section.amount || '',
+                                    'Fixed Amount': section.amount ? `£${parseFloat(section.amount).toFixed(2)}` : '',
                                     'Subtotal': section.type === 'hourly' 
                                         ? `£${(parseFloat(section.rate || 0) * parseFloat(section.hours || 0)).toFixed(2)}`
                                         : `£${parseFloat(section.amount || 0).toFixed(2)}`
                                 });
                             });
-                        }
-                    });
+                        });
+                    }
                     if (invoiceDetailsData.length > 0) {
                         const detailsSheet = XLSX.utils.json_to_sheet(invoiceDetailsData);
                         XLSX.utils.book_append_sheet(wb, detailsSheet, 'Invoice Details');
