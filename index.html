@@ -1172,6 +1172,8 @@
                 username: '', password: '', role: 'staff', firstName: '', lastName: '', email: ''
             });
             const [resolution, setResolution] = useState('');
+            const [dataSubTab, setDataSubTab] = useState('export');
+            const [importFile, setImportFile] = useState(null);
             const [emailConfig, setEmailConfig] = useState({
                 enabled: false,
                 host: '',
@@ -1749,6 +1751,50 @@
                 }
             }, [currentUser]);
 
+            // Import data from Excel JSON
+            const handleImportData = async (jsonData) => {
+                if (!jsonData) return showAlert('No data to import', 'error');
+                setLoading(true);
+                try {
+                    const response = await api.request('/data/import', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            tickets: jsonData.tickets || jsonData.Tickets || [],
+                            invoices: jsonData.invoices || jsonData.Invoices || []
+                        })
+                    });
+                    showAlert(response.message || 'Import successful!');
+                    loadData();
+                } catch (error) {
+                    showAlert('Import failed: ' + error.message, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Clear data
+            const handleClearData = async (what) => {
+                const labels = { tickets: 'ALL tickets', invoices: 'ALL invoices', all: 'ALL tickets and invoices' };
+                const label = labels[what];
+                const first = confirm(`⚠️ WARNING: This will permanently delete ${label}. This cannot be undone!\n\nAre you sure?`);
+                if (!first) return;
+                const confirmWord = prompt(`Type DELETE (in capitals) to confirm you want to erase ${label}:`);
+                if (confirmWord !== 'DELETE') return showAlert('Clear cancelled — confirmation text did not match.', 'error');
+                setLoading(true);
+                try {
+                    const response = await api.request('/data/clear', {
+                        method: 'POST',
+                        body: JSON.stringify({ what, confirm: 'DELETE' })
+                    });
+                    showAlert(response.message || 'Data cleared!');
+                    loadData();
+                } catch (error) {
+                    showAlert('Clear failed: ' + error.message, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
             // Export all data to Excel
             const handleExportData = async () => {
                 if (!confirm('Export all system data to Excel? This includes all tickets, invoices, and users (including deleted items).')) return;
@@ -2032,6 +2078,12 @@
                                         <span>Email Settings</span>
                                     </div>
                                 )}
+                                {['owner', 'coowner'].includes(currentUser.role) && (
+                                    <div className={`nav-item ${currentView === 'data' ? 'active' : ''}`} onClick={() => handleNavClick('data')}>
+                                        <Icon name="database" size={20} />
+                                        <span>Data</span>
+                                    </div>
+                                )}
                                 <div className={`nav-item ${currentView === 'archived' ? 'active' : ''}`} onClick={() => handleNavClick('archived')}>
                                     <Icon name="archive" size={20} />
                                     <span>Archived</span>
@@ -2071,6 +2123,7 @@
                                     {currentView === 'paid' && 'Paid Invoices'}
                                     {currentView === 'users' && 'Staff Management'}
                                     {currentView === 'email' && 'Email Settings'}
+                                    {currentView === 'data' && 'Data Management'}
                                     {currentView === 'archived' && 'Archived Items'}
                                 </div>
                                 <div className="topbar-actions">
@@ -2793,26 +2846,157 @@
                                                 </ul>
                                             </div>
 
-                                            <div style={{marginTop: '32px', padding: '20px', background: 'rgba(125, 211, 192, 0.1)', borderRadius: '8px', border: '2px solid rgba(125, 211, 192, 0.3)'}}>
-                                                <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px'}}>
-                                                    <div style={{fontSize: '32px'}}>💾</div>
-                                                    <div>
-                                                        <h4 style={{margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>Data Backup & Export</h4>
-                                                        <p style={{margin: 0, fontSize: '13px', color: 'var(--text-secondary)'}}>
-                                                            Export all system data to Excel for backups and offline access
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Data Management View */}
+                                {currentView === 'data' && ['owner', 'coowner'].includes(currentUser.role) && (
+                                    <div className="card">
+                                        <div className="card-header">
+                                            <div className="card-title">🗄️ Data Management</div>
+                                        </div>
+                                        {/* Sub-tabs */}
+                                        <div style={{display: 'flex', gap: '4px', padding: '16px 24px 0', borderBottom: '2px solid var(--border-color)'}}>
+                                            {['export', 'import', 'clear'].map(tab => (
+                                                <button
+                                                    key={tab}
+                                                    onClick={() => setDataSubTab(tab)}
+                                                    style={{
+                                                        padding: '8px 20px',
+                                                        border: 'none',
+                                                        borderRadius: '6px 6px 0 0',
+                                                        cursor: 'pointer',
+                                                        fontWeight: '600',
+                                                        fontSize: '14px',
+                                                        background: dataSubTab === tab ? 'var(--accent-primary)' : 'var(--bg-secondary)',
+                                                        color: dataSubTab === tab ? 'white' : 'var(--text-secondary)',
+                                                        borderBottom: dataSubTab === tab ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                                                        marginBottom: '-2px'
+                                                    }}>
+                                                    {tab === 'export' && '📊 Export'}
+                                                    {tab === 'import' && '📥 Import'}
+                                                    {tab === 'clear' && '🗑️ Clear Data'}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div style={{padding: '24px'}}>
+
+                                            {/* EXPORT TAB */}
+                                            {dataSubTab === 'export' && (
+                                                <div>
+                                                    <div style={{marginBottom: '20px', padding: '16px', background: 'rgba(110, 181, 255, 0.1)', borderRadius: '8px', border: '1px solid rgba(110, 181, 255, 0.3)'}}>
+                                                        <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)'}}>ℹ️ Export Your Data</h4>
+                                                        <p style={{margin: 0, fontSize: '14px', color: 'var(--text-secondary)'}}>
+                                                            Download all system data as an Excel file. Use this for backups or to import into another system.
                                                         </p>
                                                     </div>
+                                                    <button
+                                                        className="btn btn-primary"
+                                                        onClick={handleExportData}
+                                                        style={{minWidth: '200px', background: 'linear-gradient(135deg, var(--mint-500), #5fc9b4)', border: 'none'}}>
+                                                        📊 Export All Data to Excel
+                                                    </button>
+                                                    <div style={{marginTop: '16px', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '13px', color: 'var(--text-secondary)'}}>
+                                                        <strong>Export includes:</strong> All tickets, invoices, users, and statistics (including archived and deleted items)
+                                                    </div>
                                                 </div>
-                                                <button 
-                                                    className="btn btn-primary" 
-                                                    onClick={handleExportData}
-                                                    style={{minWidth: '180px', background: 'linear-gradient(135deg, var(--mint-500), #5fc9b4)', border: 'none'}}>
-                                                    📊 Export All Data to Excel
-                                                </button>
-                                                <div style={{marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)'}}>
-                                                    <strong>Export includes:</strong> All tickets, invoices, users, and statistics (including deleted items)
+                                            )}
+
+                                            {/* IMPORT TAB */}
+                                            {dataSubTab === 'import' && (
+                                                <div>
+                                                    <div style={{marginBottom: '20px', padding: '16px', background: 'rgba(110, 181, 255, 0.1)', borderRadius: '8px', border: '1px solid rgba(110, 181, 255, 0.3)'}}>
+                                                        <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)'}}>ℹ️ Import From Excel</h4>
+                                                        <p style={{margin: '0 0 8px 0', fontSize: '14px', color: 'var(--text-secondary)'}}>
+                                                            Upload the Excel file exported from this system to restore or migrate data. Existing data is not deleted — records are added on top.
+                                                        </p>
+                                                        <p style={{margin: 0, fontSize: '13px', color: 'var(--text-secondary)'}}>
+                                                            <strong>Tip:</strong> Use the Export tab first to get a copy, then re-import it if needed.
+                                                        </p>
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>Select Excel Export File (.xlsx)</label>
+                                                        <input
+                                                            type="file"
+                                                            accept=".xlsx,.xls"
+                                                            onChange={e => setImportFile(e.target.files[0])}
+                                                            style={{padding: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', width: '100%'}}
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        className="btn btn-primary"
+                                                        disabled={!importFile}
+                                                        onClick={async () => {
+                                                            if (!importFile) return;
+                                                            try {
+                                                                const XLSX = window.XLSX;
+                                                                if (!XLSX) return showAlert('Excel library not loaded. Please refresh the page.', 'error');
+                                                                const data = await importFile.arrayBuffer();
+                                                                const workbook = XLSX.read(data);
+                                                                const jsonData = {};
+                                                                workbook.SheetNames.forEach(name => {
+                                                                    jsonData[name] = XLSX.utils.sheet_to_json(workbook.Sheets[name]);
+                                                                });
+                                                                await handleImportData(jsonData);
+                                                                setImportFile(null);
+                                                            } catch (err) {
+                                                                showAlert('Failed to read file: ' + err.message, 'error');
+                                                            }
+                                                        }}
+                                                        style={{minWidth: '160px'}}>
+                                                        📥 Import Data
+                                                    </button>
+                                                    {importFile && (
+                                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--text-secondary)'}}>
+                                                            Selected: <strong>{importFile.name}</strong> ({Math.round(importFile.size / 1024)} KB)
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            </div>
+                                            )}
+
+                                            {/* CLEAR DATA TAB */}
+                                            {dataSubTab === 'clear' && (
+                                                <div>
+                                                    <div style={{marginBottom: '20px', padding: '16px', background: 'rgba(245, 101, 101, 0.1)', borderRadius: '8px', border: '1px solid rgba(245, 101, 101, 0.4)'}}>
+                                                        <h4 style={{margin: '0 0 8px 0', color: '#e53e3e'}}>⚠️ Danger Zone</h4>
+                                                        <p style={{margin: 0, fontSize: '14px', color: 'var(--text-secondary)'}}>
+                                                            These actions <strong>permanently delete</strong> data and cannot be undone. We strongly recommend exporting your data first.
+                                                        </p>
+                                                    </div>
+                                                    <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                                                        <div style={{padding: '20px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px'}}>
+                                                            <div>
+                                                                <div style={{fontWeight: '600', marginBottom: '4px'}}>🎫 Clear All Tickets</div>
+                                                                <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Permanently deletes all tickets (active, completed, archived, and deleted)</div>
+                                                            </div>
+                                                            <button className="btn btn-danger" onClick={() => handleClearData('tickets')} style={{minWidth: '130px', whiteSpace: 'nowrap'}}>
+                                                                🗑️ Clear Tickets
+                                                            </button>
+                                                        </div>
+                                                        <div style={{padding: '20px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px'}}>
+                                                            <div>
+                                                                <div style={{fontWeight: '600', marginBottom: '4px'}}>🧾 Clear All Invoices</div>
+                                                                <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Permanently deletes all invoices (active, paid, archived, and deleted)</div>
+                                                            </div>
+                                                            <button className="btn btn-danger" onClick={() => handleClearData('invoices')} style={{minWidth: '130px', whiteSpace: 'nowrap'}}>
+                                                                🗑️ Clear Invoices
+                                                            </button>
+                                                        </div>
+                                                        <div style={{padding: '20px', background: 'rgba(245, 101, 101, 0.05)', borderRadius: '8px', border: '2px solid rgba(245, 101, 101, 0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px'}}>
+                                                            <div>
+                                                                <div style={{fontWeight: '700', marginBottom: '4px', color: '#e53e3e'}}>💥 Clear Everything</div>
+                                                                <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Permanently deletes ALL tickets AND invoices. Users are kept.</div>
+                                                            </div>
+                                                            <button className="btn btn-danger" onClick={() => handleClearData('all')} style={{minWidth: '150px', whiteSpace: 'nowrap', background: '#c53030'}}>
+                                                                💥 Clear Everything
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                         </div>
                                     </div>
                                 )}
