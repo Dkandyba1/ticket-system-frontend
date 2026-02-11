@@ -1754,16 +1754,68 @@
             // Import data from Excel JSON
             const handleImportData = async (jsonData) => {
                 if (!jsonData) return showAlert('No data to import', 'error');
+
+                // Helper: try to parse various date formats into ISO string
+                const parseDate = (val) => {
+                    if (!val || val === '') return null;
+                    // Already ISO-ish
+                    if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}/)) return val;
+                    // Excel serial number
+                    if (typeof val === 'number') {
+                        const d = new Date((val - 25569) * 86400 * 1000);
+                        return isNaN(d) ? null : d.toISOString().slice(0, 10);
+                    }
+                    // Formatted string like "01/05/2025" or "5/1/2025"
+                    const d = new Date(val);
+                    return isNaN(d) ? null : d.toISOString().slice(0, 10);
+                };
+
+                // Map exported Tickets sheet rows to backend-expected format
+                const rawTickets = jsonData.Tickets || jsonData.tickets || [];
+                const tickets = rawTickets
+                    .filter(row => row.Client || row.client)
+                    .map(row => ({
+                        client:       row.Client      || row.client      || '',
+                        task:         row.Task        || row.task        || '',
+                        description:  row.Description || row.description || null,
+                        deadline:     parseDate(row.Deadline || row.deadline),
+                        location:     row.Location    || row.location    || null,
+                        urgency:     (row.Urgency     || row.urgency     || 'medium').toLowerCase(),
+                        resolution:   row.Resolution  || row.resolution  || null,
+                        completedDate: parseDate(row.Completed  || row.completedDate) || null,
+                        archivedDate:  parseDate(row.Archived   || row.archivedDate)  || null
+                    }))
+                    .filter(row => row.client && row.task && row.deadline);
+
+                // Map exported Invoices sheet rows to backend-expected format
+                const rawInvoices = jsonData.Invoices || jsonData.invoices || [];
+                const invoices = rawInvoices
+                    .filter(row => row.Client || row.client)
+                    .map(row => ({
+                        client:        row.Client          || row.client          || '',
+                        contactName:   row['Contact Name'] || row.contactName     || null,
+                        contactEmail:  row['Contact Email']|| row.contactEmail    || null,
+                        contactPhone:  row['Contact Phone']|| row.contactPhone    || null,
+                        paymentTerms: (row['Payment Terms']|| row.paymentTerms   || 'now').toLowerCase().replace(' ', '_'),
+                        paymentDeadline: parseDate(row['Payment Deadline'] || row.paymentDeadline) || null,
+                        totalAmount:  parseFloat(String(row['Total Amount'] || row.totalAmount || '0').replace(/[£$,]/g, '')) || 0,
+                        inQuickBooks: (row['In QuickBooks'] || row.inQuickBooks || 'no').toLowerCase(),
+                        paidDate:      parseDate(row.Paid       || row.paidDate)      || null,
+                        archivedDate:  parseDate(row.Archived   || row.archivedDate)  || null
+                    }))
+                    .filter(row => row.client);
+
+                if (tickets.length === 0 && invoices.length === 0) {
+                    return showAlert('No valid tickets or invoices found in this file. Make sure you are uploading a file exported from this system.', 'error');
+                }
+
                 setLoading(true);
                 try {
                     const response = await api.request('/data/import', {
                         method: 'POST',
-                        body: JSON.stringify({
-                            tickets: jsonData.tickets || jsonData.Tickets || [],
-                            invoices: jsonData.invoices || jsonData.Invoices || []
-                        })
+                        body: JSON.stringify({ tickets, invoices })
                     });
-                    showAlert(response.message || 'Import successful!');
+                    showAlert(`✅ ${response.message || 'Import successful!'}`);
                     loadData();
                 } catch (error) {
                     showAlert('Import failed: ' + error.message, 'error');
@@ -2934,7 +2986,7 @@
                                                                 const XLSX = window.XLSX;
                                                                 if (!XLSX) return showAlert('Excel library not loaded. Please refresh the page.', 'error');
                                                                 const data = await importFile.arrayBuffer();
-                                                                const workbook = XLSX.read(data);
+                                                                const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
                                                                 const jsonData = {};
                                                                 workbook.SheetNames.forEach(name => {
                                                                     jsonData[name] = XLSX.utils.sheet_to_json(workbook.Sheets[name]);
