@@ -1069,7 +1069,7 @@
             return (
                 <div className={`alert alert-${type}`}>
                     <span className="alert-icon">
-                        {type === 'success' ? '✓' : '✕'}
+                        <Icon name={type === 'success' ? 'check' : 'close'} size={16} />
                     </span>
                     <span className="alert-message">{message}</span>
                 </div>
@@ -1106,7 +1106,17 @@
                 restore: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M3 12a9 9 0 009 9 9.75 9.75 0 006.74-2.74L21 16"></path></svg>`,
                 mail: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
                 edit: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
-                eye: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`
+                eye: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+                database: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>`,
+                download: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+                upload: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`,
+                warning: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+                info: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="8"></line><line x1="12" y1="12" x2="12" y2="16"></line></svg>`,
+                plus: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+                send: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`,
+                settings: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>`,
+                menu: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`,
+                close: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
             };
             return React.createElement('span', {
                 className: `icon ${className}`,
@@ -1815,7 +1825,7 @@
                         method: 'POST',
                         body: JSON.stringify({ tickets, invoices })
                     });
-                    showAlert(`✅ ${response.message || 'Import successful!'}`);
+                    showAlert(response.message || 'Import successful!');
                     loadData();
                 } catch (error) {
                     showAlert('Import failed: ' + error.message, 'error');
@@ -1828,7 +1838,7 @@
             const handleClearData = async (what) => {
                 const labels = { tickets: 'ALL tickets', invoices: 'ALL invoices', all: 'ALL tickets and invoices' };
                 const label = labels[what];
-                const first = confirm(`⚠️ WARNING: This will permanently delete ${label}. This cannot be undone!\n\nAre you sure?`);
+                const first = confirm(`WARNING: This will permanently delete ${label}. This cannot be undone!\n\nAre you sure?`);
                 if (!first) return;
                 const confirmWord = prompt(`Type DELETE (in capitals) to confirm you want to erase ${label}:`);
                 if (confirmWord !== 'DELETE') return showAlert('Clear cancelled — confirmation text did not match.', 'error');
@@ -2068,7 +2078,7 @@
                     
                     {/* Mobile menu button */}
                     <button className="mobile-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                        {sidebarOpen ? '✕' : '☰'}
+                        <Icon name={sidebarOpen ? 'close' : 'menu'} size={20} />
                     </button>
                     
                     {/* Sidebar overlay for mobile */}
@@ -2192,7 +2202,7 @@
                                         </button>
                                     )}
                                     <button className="icon-btn" onClick={() => setDarkMode(!darkMode)}>
-                                        {darkMode ? '☀️' : '🌙'}
+                                        <Icon name={darkMode ? 'sun' : 'moon'} size={18} />
                                     </button>
                                 </div>
                             </div>
@@ -2762,11 +2772,11 @@
                                 {currentView === 'email' && ['owner', 'coowner'].includes(currentUser.role) && (
                                     <div className="card">
                                         <div className="card-header">
-                                            <div className="card-title">📧 Email Configuration</div>
+                                            <div className="card-title">Email Configuration</div>
                                         </div>
                                         <div style={{padding: '24px'}}>
                                             <div style={{marginBottom: '20px', padding: '16px', background: 'rgba(110, 181, 255, 0.1)', borderRadius: '8px', border: '1px solid rgba(110, 181, 255, 0.3)'}}>
-                                                <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)'}}>ℹ️ Email System Configuration</h4>
+                                                <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)', display: 'flex', alignItems: 'center', gap: '8px'}}><Icon name="info" size={16} /> Email System Configuration</h4>
                                                 <p style={{margin: 0, fontSize: '14px', color: 'var(--text-secondary)'}}>
                                                     Configure SMTP settings to enable automatic email notifications. Users will receive emails when tickets are assigned to them.
                                                 </p>
@@ -2888,7 +2898,7 @@
                                             </div>
 
                                             <div style={{marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)'}}>
-                                                <h4 style={{margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600'}}>📋 Email Features:</h4>
+                                                <h4 style={{margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600'}}>Email Features:</h4>
                                                 <ul style={{margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.8'}}>
                                                     <li>Automatic email when ticket is assigned to a user</li>
                                                     <li>Automatic email when ticket assignment changes</li>
@@ -2906,7 +2916,7 @@
                                 {currentView === 'data' && ['owner', 'coowner'].includes(currentUser.role) && (
                                     <div className="card">
                                         <div className="card-header">
-                                            <div className="card-title">🗄️ Data Management</div>
+                                            <div className="card-title">Data Management</div>
                                         </div>
                                         {/* Sub-tabs */}
                                         <div style={{display: 'flex', gap: '4px', padding: '16px 24px 0', borderBottom: '2px solid var(--border-color)'}}>
@@ -2924,11 +2934,12 @@
                                                         background: dataSubTab === tab ? 'var(--accent-primary)' : 'var(--bg-secondary)',
                                                         color: dataSubTab === tab ? 'white' : 'var(--text-secondary)',
                                                         borderBottom: dataSubTab === tab ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                                                        marginBottom: '-2px'
+                                                        marginBottom: '-2px',
+                                                        display: 'flex', alignItems: 'center', gap: '6px'
                                                     }}>
-                                                    {tab === 'export' && '📊 Export'}
-                                                    {tab === 'import' && '📥 Import'}
-                                                    {tab === 'clear' && '🗑️ Clear Data'}
+                                                    {tab === 'export' && (<><Icon name="download" size={14} /> Export</>)}
+                                                    {tab === 'import' && (<><Icon name="upload" size={14} /> Import</>)}
+                                                    {tab === 'clear' && (<><Icon name="trash" size={14} /> Clear Data</>)}
                                                 </button>
                                             ))}
                                         </div>
@@ -2939,7 +2950,7 @@
                                             {dataSubTab === 'export' && (
                                                 <div>
                                                     <div style={{marginBottom: '20px', padding: '16px', background: 'rgba(110, 181, 255, 0.1)', borderRadius: '8px', border: '1px solid rgba(110, 181, 255, 0.3)'}}>
-                                                        <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)'}}>ℹ️ Export Your Data</h4>
+                                                        <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)', display: 'flex', alignItems: 'center', gap: '8px'}}><Icon name="info" size={16} /> Export Your Data</h4>
                                                         <p style={{margin: 0, fontSize: '14px', color: 'var(--text-secondary)'}}>
                                                             Download all system data as an Excel file. Use this for backups or to import into another system.
                                                         </p>
@@ -2947,8 +2958,8 @@
                                                     <button
                                                         className="btn btn-primary"
                                                         onClick={handleExportData}
-                                                        style={{minWidth: '200px', background: 'linear-gradient(135deg, var(--mint-500), #5fc9b4)', border: 'none'}}>
-                                                        📊 Export All Data to Excel
+                                                        style={{minWidth: '200px', background: 'linear-gradient(135deg, var(--mint-500), #5fc9b4)', border: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px'}}>
+                                                        <Icon name="download" size={16} /> Export All Data to Excel
                                                     </button>
                                                     <div style={{marginTop: '16px', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '13px', color: 'var(--text-secondary)'}}>
                                                         <strong>Export includes:</strong> All tickets, invoices, users, and statistics (including archived and deleted items)
@@ -2960,7 +2971,7 @@
                                             {dataSubTab === 'import' && (
                                                 <div>
                                                     <div style={{marginBottom: '20px', padding: '16px', background: 'rgba(110, 181, 255, 0.1)', borderRadius: '8px', border: '1px solid rgba(110, 181, 255, 0.3)'}}>
-                                                        <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)'}}>ℹ️ Import From Excel</h4>
+                                                        <h4 style={{margin: '0 0 8px 0', color: 'var(--sky-500)', display: 'flex', alignItems: 'center', gap: '8px'}}><Icon name="info" size={16} /> Import From Excel</h4>
                                                         <p style={{margin: '0 0 8px 0', fontSize: '14px', color: 'var(--text-secondary)'}}>
                                                             Upload the Excel file exported from this system to restore or migrate data. Existing data is not deleted — records are added on top.
                                                         </p>
@@ -2997,8 +3008,8 @@
                                                                 showAlert('Failed to read file: ' + err.message, 'error');
                                                             }
                                                         }}
-                                                        style={{minWidth: '160px'}}>
-                                                        📥 Import Data
+                                                        style={{minWidth: '160px', display: 'inline-flex', alignItems: 'center', gap: '8px'}}>
+                                                        <Icon name="upload" size={16} /> Import Data
                                                     </button>
                                                     {importFile && (
                                                         <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--text-secondary)'}}>
@@ -3012,7 +3023,7 @@
                                             {dataSubTab === 'clear' && (
                                                 <div>
                                                     <div style={{marginBottom: '20px', padding: '16px', background: 'rgba(245, 101, 101, 0.1)', borderRadius: '8px', border: '1px solid rgba(245, 101, 101, 0.4)'}}>
-                                                        <h4 style={{margin: '0 0 8px 0', color: '#e53e3e'}}>⚠️ Danger Zone</h4>
+                                                        <h4 style={{margin: '0 0 8px 0', color: '#e53e3e', display: 'flex', alignItems: 'center', gap: '8px'}}><Icon name="warning" size={16} /> Danger Zone</h4>
                                                         <p style={{margin: 0, fontSize: '14px', color: 'var(--text-secondary)'}}>
                                                             These actions <strong>permanently delete</strong> data and cannot be undone. We strongly recommend exporting your data first.
                                                         </p>
@@ -3020,29 +3031,29 @@
                                                     <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
                                                         <div style={{padding: '20px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px'}}>
                                                             <div>
-                                                                <div style={{fontWeight: '600', marginBottom: '4px'}}>🎫 Clear All Tickets</div>
+                                                                <div style={{fontWeight: '600', marginBottom: '4px'}}>Clear All Tickets</div>
                                                                 <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Permanently deletes all tickets (active, completed, archived, and deleted)</div>
                                                             </div>
-                                                            <button className="btn btn-danger" onClick={() => handleClearData('tickets')} style={{minWidth: '130px', whiteSpace: 'nowrap'}}>
-                                                                🗑️ Clear Tickets
+                                                            <button className="btn btn-danger" onClick={() => handleClearData('tickets')} style={{minWidth: '130px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '6px'}}>
+                                                                <Icon name="trash" size={14} /> Clear Tickets
                                                             </button>
                                                         </div>
                                                         <div style={{padding: '20px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px'}}>
                                                             <div>
-                                                                <div style={{fontWeight: '600', marginBottom: '4px'}}>🧾 Clear All Invoices</div>
+                                                                <div style={{fontWeight: '600', marginBottom: '4px'}}>Clear All Invoices</div>
                                                                 <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Permanently deletes all invoices (active, paid, archived, and deleted)</div>
                                                             </div>
-                                                            <button className="btn btn-danger" onClick={() => handleClearData('invoices')} style={{minWidth: '130px', whiteSpace: 'nowrap'}}>
-                                                                🗑️ Clear Invoices
+                                                            <button className="btn btn-danger" onClick={() => handleClearData('invoices')} style={{minWidth: '130px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '6px'}}>
+                                                                <Icon name="trash" size={14} /> Clear Invoices
                                                             </button>
                                                         </div>
                                                         <div style={{padding: '20px', background: 'rgba(245, 101, 101, 0.05)', borderRadius: '8px', border: '2px solid rgba(245, 101, 101, 0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px'}}>
                                                             <div>
-                                                                <div style={{fontWeight: '700', marginBottom: '4px', color: '#e53e3e'}}>💥 Clear Everything</div>
+                                                                <div style={{fontWeight: '700', marginBottom: '4px', color: '#e53e3e'}}>Clear All Data</div>
                                                                 <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Permanently deletes ALL tickets AND invoices. Users are kept.</div>
                                                             </div>
-                                                            <button className="btn btn-danger" onClick={() => handleClearData('all')} style={{minWidth: '150px', whiteSpace: 'nowrap', background: '#c53030'}}>
-                                                                💥 Clear Everything
+                                                            <button className="btn btn-danger" onClick={() => handleClearData('all')} style={{minWidth: '150px', whiteSpace: 'nowrap', background: '#c53030', display: 'inline-flex', alignItems: 'center', gap: '6px'}}>
+                                                                <Icon name="warning" size={14} /> Clear Everything
                                                             </button>
                                                         </div>
                                                     </div>
@@ -3216,7 +3227,7 @@
                             <div className="modal" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <div className="modal-title">New Ticket</div>
-                                    <button className="close-btn" onClick={() => setShowNewTicket(false)}>✕</button>
+                                    <button className="close-btn" onClick={() => setShowNewTicket(false)}><Icon name="close" size={16} /></button>
                                 </div>
                                 <div className="form-group">
                                     <label>Client Name *</label>
@@ -3269,7 +3280,7 @@
                             <div className="modal" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <div className="modal-title">Edit Ticket</div>
-                                    <button className="close-btn" onClick={() => setShowEditTicket(false)}>✕</button>
+                                    <button className="close-btn" onClick={() => setShowEditTicket(false)}><Icon name="close" size={16} /></button>
                                 </div>
                                 <div className="form-group">
                                     <label>Client Name *</label>
@@ -3322,7 +3333,7 @@
                             <div className="modal" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <div className="modal-title">Complete Ticket</div>
-                                    <button className="close-btn" onClick={() => setShowResolution(false)}>✕</button>
+                                    <button className="close-btn" onClick={() => setShowResolution(false)}><Icon name="close" size={16} /></button>
                                 </div>
                                 <div style={{marginBottom: '20px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)'}}>
                                     <p style={{marginBottom: '8px', color: 'var(--text-primary)'}}><strong>Client:</strong> {selectedTicket.client}</p>
@@ -3346,7 +3357,7 @@
                             <div className="modal" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <div className="modal-title">New Invoice</div>
-                                    <button className="close-btn" onClick={() => setShowNewInvoice(false)}>✕</button>
+                                    <button className="close-btn" onClick={() => setShowNewInvoice(false)}><Icon name="close" size={16} /></button>
                                 </div>
                                 <div className="form-group">
                                     <label>Client Name *</label>
@@ -3401,7 +3412,7 @@
                                                     <option value="fixed">Fixed Charge</option>
                                                 </select>
                                                 {invoiceSections.length > 1 && (
-                                                    <button className="btn btn-danger" onClick={() => removeInvoiceSection(index)}>✕</button>
+                                                    <button className="btn btn-danger" onClick={() => removeInvoiceSection(index)}><Icon name="close" size={14} /></button>
                                                 )}
                                             </div>
                                             <div className="invoice-section-fields">
@@ -3413,7 +3424,7 @@
                                                             value={section.rate}
                                                             onChange={e => updateInvoiceSection(index, 'rate', e.target.value)}
                                                         />
-                                                        <span>×</span>
+                                                        <Icon name="close" size={14} />
                                                         <input
                                                             type="number"
                                                             placeholder="Hours"
@@ -3470,7 +3481,7 @@
                             <div className="modal" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <div className="modal-title">Edit Invoice</div>
-                                    <button className="close-btn" onClick={() => setShowEditInvoice(false)}>✕</button>
+                                    <button className="close-btn" onClick={() => setShowEditInvoice(false)}><Icon name="close" size={16} /></button>
                                 </div>
                                 <div className="form-group">
                                     <label>Client Name *</label>
@@ -3521,7 +3532,7 @@
                                                     <option value="fixed">Fixed Charge</option>
                                                 </select>
                                                 {invoiceSections.length > 1 && (
-                                                    <button className="btn btn-danger" onClick={() => removeInvoiceSection(index)}>✕</button>
+                                                    <button className="btn btn-danger" onClick={() => removeInvoiceSection(index)}><Icon name="close" size={14} /></button>
                                                 )}
                                             </div>
                                             <div className="invoice-section-fields">
@@ -3533,7 +3544,7 @@
                                                             value={section.rate || ''}
                                                             onChange={e => updateInvoiceSection(index, 'rate', e.target.value)}
                                                         />
-                                                        <span>×</span>
+                                                        <Icon name="close" size={14} />
                                                         <input
                                                             type="number"
                                                             placeholder="Hours"
@@ -3590,7 +3601,7 @@
                             <div className="modal" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <div className="modal-title">Add User</div>
-                                    <button className="close-btn" onClick={() => setShowAddStaff(false)}>✕</button>
+                                    <button className="close-btn" onClick={() => setShowAddStaff(false)}><Icon name="close" size={16} /></button>
                                 </div>
                                 <div className="form-group">
                                     <label>Username *</label>
@@ -3634,7 +3645,7 @@
                             <div className="modal" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <div className="modal-title">Edit User</div>
-                                    <button className="close-btn" onClick={() => setShowEditUser(false)}>✕</button>
+                                    <button className="close-btn" onClick={() => setShowEditUser(false)}><Icon name="close" size={16} /></button>
                                 </div>
                                 <div className="form-group">
                                     <label>Username</label>
@@ -3648,8 +3659,8 @@
                                     </div>
                                 )}
                                 {currentUser.role === 'admin' && (editingUser.role === 'owner' || editingUser.role === 'coowner') && (
-                                    <div style={{padding: '12px', background: 'rgba(255, 139, 148, 0.1)', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', color: 'var(--coral-500)'}}>
-                                        ⚠️ Admins cannot change owner/co-owner passwords
+                                    <div style={{padding: '12px', background: 'rgba(255, 139, 148, 0.1)', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', color: 'var(--coral-500)', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <Icon name="warning" size={14} /> Admins cannot change owner/co-owner passwords
                                     </div>
                                 )}
                                 <div className="form-group">
@@ -3677,8 +3688,8 @@
                                     </div>
                                 )}
                                 {currentUser.role !== 'owner' && (
-                                    <div style={{padding: '12px', background: 'rgba(110, 181, 255, 0.1)', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', color: 'var(--sky-500)'}}>
-                                        ℹ️ Only the owner can change user roles. Current role: <strong>{editingUser.role}</strong>
+                                    <div style={{padding: '12px', background: 'rgba(110, 181, 255, 0.1)', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', color: 'var(--sky-500)', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <Icon name="info" size={14} /> Only the owner can change user roles. Current role: <strong>{editingUser.role}</strong>
                                     </div>
                                 )}
                                 <div className="modal-actions">
@@ -3695,7 +3706,7 @@
                             <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px'}}>
                                 <div className="modal-header">
                                     <div className="modal-title">Ticket Details</div>
-                                    <button className="close-btn" onClick={() => setShowTicketDetail(false)}>✕</button>
+                                    <button className="close-btn" onClick={() => setShowTicketDetail(false)}><Icon name="close" size={16} /></button>
                                 </div>
                                 
                                 <div style={{display: 'grid', gap: '16px'}}>
